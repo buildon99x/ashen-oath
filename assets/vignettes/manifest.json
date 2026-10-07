@@ -1,0 +1,79 @@
+{
+  "title": "Ashen Oath original interlude vignettes",
+  "generator": "tools/generate_vignettes.py",
+  "authorship": "Original code-native pixel illustrations. No external or reference image pixels, external assets, AI image APIs, fonts, or copied source-game artwork.",
+  "logical_size": [
+    128,
+    96
+  ],
+  "output_size": [
+    256,
+    192
+  ],
+  "pixel_scale": 2,
+  "filter": "nearest",
+  "transparency": "RGBA; transparent canvas with opaque authored clusters.",
+  "art_direction": "Muted stone, worn cloth, dark leather, brass, and restrained ember/teal highlights.",
+  "assets": [
+    {
+      "file": "camp.png",
+      "size": [
+        256,
+        192
+      ],
+      "alpha_bbox": [
+        20,
+        30,
+        244,
+        184
+      ],
+      "sha256": "8ee495f5cdffd273dff4af34c96d2dcf8a871184d9e6d469d7bd0e2c302a5df6",
+      "bytes": 3249
+    },
+    {
+      "file": "relic.png",
+      "size": [
+        256,
+        192
+      ],
+      "alpha_bbox": [
+        20,
+        22,
+        236,
+        184
+      ],
+      "sha256": "3165c461b5fa149fe481dde2b1b074cd829568bb7eefc9025dbb1fc124423551",
+      "bytes": 3458
+    },
+    {
+      "file": "event.png",
+      "size": [
+        256,
+        192
+      ],
+      "alpha_bbox": [
+        20,
+        24,
+        236,
+        184
+      ],
+      "sha256": "b71b12af2805550e12908120080cb941d65502d771c89f3798cdcf16f806e483",
+      "bytes": 3377
+    },
+    {
+      "file": "reward.png",
+      "size": [
+        256,
+        192
+      ],
+      "alpha_bbox": [
+        20,
+        26,
+        236,
+        184
+      ],
+      "sha256": "9b80fa3c42b314afb4269e66909125288d0eac6e97c2833ece1c91d0bf80845e",
+      "bytes": 3433
+    }
+  ]
+}

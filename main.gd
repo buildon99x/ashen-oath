@@ -12,6 +12,7 @@ var titan_sprites: Array = []
 var hero_sprites: Array = []
 var actors: Array[Node2D]=[]
 var environments: Array[Texture2D]=[]
+var vignettes: Dictionary={}
 var party_feet: Array[Vector2]=[Vector2(420,480),Vector2(520,510),Vector2(620,540)]
 var ui: Control
 var selected_hero: int = 0
@@ -56,6 +57,9 @@ func _ready() -> void:
 	for path in ["cinder_forest","drowned_reliquary","pale_throne"]:
 		var file: String="res://assets/environments/"+path+".png"
 		environments.append(load(file) as Texture2D if ResourceLoader.exists(file) else forest)
+	for key in ["camp","relic","event","reward"]:
+		var path: String="res://assets/vignettes/"+key+".png"
+		if ResourceLoader.exists(path): vignettes[key]=load(path)
 	ui = Control.new()
 	add_child(ui)
 	audio = AudioStreamPlayer.new()
@@ -330,15 +334,20 @@ func finish_round() -> void:
 	refresh()
 
 func show_map() -> void:
-	label_at(model.title.to_upper(), Vector2(60, 115), 39, PALE)
-	label_at("Crossing %d of 9  /  Choose your next encounter" % (int(model.run.get("node",0))+1), Vector2(63, 168), 20, TEAL)
-	paragraph("A crown is not broken in a single blow. Rest when wounded, gather relics, and choose what kind of memory you leave behind.", Vector2(65, 227), 600, 22)
+	panel_at(Rect2(45,110,1350,190))
+	label_at("THE PILGRIMAGE / %s" % ["CINDER FOREST","DROWNED RELIQUARY","PALE THRONE"][clampi(int(model.run.get("node",0))/3,0,2)],Vector2(65,124),16,TEAL,1250)
+	label_at(model.title.to_upper(), Vector2(65, 153), 36, PALE,1250)
+	paragraph("Crossing %d of 9. Rest when wounded, gather relics, and choose what kind of memory you leave behind." % (int(model.run.get("node",0))+1), Vector2(65, 211), 1060, 20)
+	label_at("YOUR ROAD",Vector2(65,326),16,GOLD,300)
+	label_at("CHECK: PASSED   /   GOLD: HERE   /   CROWN: SOVEREIGN",Vector2(665,326),14,TEAL,680)
+	for i in range(9):
+		label_at("%02d" % (i+1),Vector2(91+i*145,463),16,GOLD if i==int(model.run.get("node",0)) else Color("a4b5b3"),60)
 	for i in range(model.choices.size()):
 		var c: Dictionary = model.choices[i]
 		button(c.get("name","Road") + "\n\n" + c.get("description",""), Rect2(65+i*440, 540, 410, 157), travel.bind(i), i==0)
 	party_summary(740)
 	if model.log.size()>0:
-		paragraph(model.log[-1],Vector2(65,850),1300,15,GOLD)
+		paragraph(model.log[-1],Vector2(65,866),1300,14,GOLD)
 
 func travel(index: int) -> void:
 	model.travel(index)
@@ -348,15 +357,18 @@ func travel(index: int) -> void:
 	refresh()
 
 func show_choices(options: Array, title_text: String, description: String, reward: bool) -> void:
-	label_at(title_text.to_upper(), Vector2(65, 140), 37, GOLD)
-	paragraph(description, Vector2(68, 210), 720, 23)
+	panel_at(Rect2(45,120,830,320))
+	label_at("A MOMENT ON THE ROAD / "+model.phase.to_upper(),Vector2(68,140),16,TEAL,750)
+	paragraph(title_text.to_upper(), Vector2(65, 183), 770, 36, GOLD)
+	paragraph(description, Vector2(68, 285), 720, 23)
+	label_at("CHOOSE YOUR NEXT ACT",Vector2(65,482),16,TEAL,750)
 	for i in range(options.size()):
 		var c: Dictionary = options[i]
 		var action: Callable = choose_reward.bind(i) if reward else choose_event.bind(i)
 		button(c.get("name","Choice") + "\n\n" + c.get("description",""), Rect2(65+i*440, 520, 410, 176), action, i==0)
-	party_summary(750)
+	party_summary(740)
 	if not message.is_empty():
-		label_at(message,Vector2(65,458),19,GOLD)
+		paragraph(message,Vector2(65,446),1280,18,GOLD)
 
 func choose_reward(index: int) -> void:
 	model.choose_reward(index)
@@ -373,11 +385,33 @@ func choose_event(index: int) -> void:
 func party_summary(y: int) -> void:
 	for i in range(model.heroes.size()):
 		var h: Dictionary = model.heroes[i]
-		label_at("%s   %d / %d HP" % [h.get("name",""),h.get("hp",0),h.get("max_hp",0)], Vector2(65+i*440,y),22,TEAL)
+		var x: int=65+i*440
+		panel_at(Rect2(x,y,410,78))
+		var portrait=TextureRect.new()
+		var atlas=AtlasTexture.new()
+		atlas.atlas=load("res://assets/heroes/"+["mara","ivo","sable"][i]+".png")
+		atlas.region=Rect2(22,4,52,48)
+		portrait.texture=atlas
+		portrait.position=Vector2(x+12,y+14)
+		portrait.size=Vector2(52,48)
+		portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		ui.add_child(portrait)
+		label_at("%s  %d/%d HP" % [h.get("name",""),h.get("hp",0),h.get("max_hp",0)],Vector2(x+78,y+9),20,TEAL,316)
+		label_at("FOCUS %d/%d" % [h.get("mp",0),h.get("max_mp",0)],Vector2(x+78,y+37),14,PALE,300)
+		meter(Rect2(x+78,y+64,174,4),float(h.hp)/maxf(1,float(h.max_hp)),Color("a7c48e"))
+		meter(Rect2(x+265,y+64,124,4),float(h.mp)/maxf(1,float(h.max_mp)),Color("79b6bf"))
 	var names: Array[String]=[]
 	for relic in model.run.get("relics",[]):
 		names.append(relic.get("name","Relic"))
-	label_at("Relics: " + (", ".join(names) if not names.is_empty() else "None yet"), Vector2(65,y+48),16,Color("91a6a7"))
+	paragraph("RELICS / " + (", ".join(names) if not names.is_empty() else "None yet"), Vector2(65,y+90),1300,15,Color("c5cebc"))
+
+func panel_at(rect: Rect2) -> void:
+	var panel=Panel.new()
+	panel.position=rect.position
+	panel.size=rect.size
+	panel.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel",pixel_frame("normal"))
+	ui.add_child(panel)
 
 func show_ending() -> void:
 	var won: bool = model.phase == "victory"
@@ -434,7 +468,7 @@ func _draw() -> void:
 		var x: float = fmod(i*139.7+clock_time*(4+i%5),1440)
 		var y: float = fmod(i*97.3-clock_time*8+1800,900)
 		draw_circle(Vector2(x,y),1.5,Color(0.8,0.68,0.43,0.2+0.15*sin(clock_time+i)))
-	if menu or model.phase=="battle":
+	if environments.size()==3:
 		var biome: int=clampi(int(model.run.get("node",0))/3,0,2)
 		draw_texture_rect(environments[biome] if environments.size()==3 else forest,Rect2(0,0,1440,900),false)
 		if menu:
@@ -442,6 +476,8 @@ func _draw() -> void:
 		# soft grounded arena shadow
 		for i in range(6):
 			draw_rect(Rect2(0,560+i*9,1440,12),Color(0.03,0.065,0.08,0.07+i*0.03))
+	if not menu and model.phase!="battle":
+		draw_rect(Rect2(0,87,1440,813),Color(0.02,0.055,0.065,0.38))
 	if menu:
 		draw_titan(Vector2(1020,598),1.15)
 	elif model.phase == "battle":
@@ -459,16 +495,29 @@ func _draw() -> void:
 		draw_rect(Rect2(530,135,490,6),Color("3b4545"))
 		draw_rect(Rect2(530,135,490*hp,6),GOLD)
 	elif model.phase == "map":
+		box(Rect2(45,312,1350,197),Color(0.025,0.06,0.075,0.90),Color("596b68"))
+		var node: int=int(model.run.get("node",0))
 		for i in range(9):
 			var x: float=110+i*145
-			var y: float=405+sin(i*0.95)*35
+			var y: float=416
 			if i<8:
-				draw_line(Vector2(x,y),Vector2(x+145,405+sin((i+1)*0.95)*35),Color("596b68"),2)
-			var current: bool = i==int(model.run.get("node",0))
-			draw_circle(Vector2(x,y),20 if current else 12,GOLD if current else Color("536b6d"))
-			draw_circle(Vector2(x,y),9 if current else 5,INK)
+				for dash in range(7): draw_rect(Rect2(x+28+dash*15,y-2,8,4),GOLD if i<node else Color("596b68"))
+			var current: bool=i==node
+			var shade: Color=GOLD if current else (TEAL if i<node else Color("596b68"))
+			draw_rect(Rect2(x-25,y-25,50,50),shade)
+			draw_rect(Rect2(x-21,y-21,42,42),INK)
+			if i<node:
+				draw_line(Vector2(x-9,y),Vector2(x-2,y+8),TEAL,4)
+				draw_line(Vector2(x-2,y+8),Vector2(x+12,y-10),TEAL,4)
+			elif i%3==2:
+				draw_colored_polygon(PackedVector2Array([Vector2(x-13,y-9),Vector2(x-6,y-2),Vector2(x,y-13),Vector2(x+6,y-2),Vector2(x+13,y-9),Vector2(x+10,y+11),Vector2(x-10,y+11)]),shade)
+			else: draw_rect(Rect2(x-6,y-6,12,12),shade)
 	else:
-		draw_titan(Vector2(1080,510),0.7)
+		var vignette_key: String=model.phase
+		if vignette_key in vignettes:
+			draw_texture_rect(vignettes[vignette_key],Rect2(900,104,512,384),false)
+		elif model.phase in ["victory","defeat"]:
+			draw_titan(Vector2(1080,510),0.7)
 	box(Rect2(0,0,1440,87),Color(0.035,0.065,0.09,0.95))
 	draw_line(Vector2(35,86),Vector2(1405,86),Color("45504c"),1)
 

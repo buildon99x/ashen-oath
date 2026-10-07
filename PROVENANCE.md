@@ -22,3 +22,6 @@ Craftpix's public four-direction female-base page was reviewed for animation str
 The Apache-2.0 sprite-gen repository https://github.com/aldegad/sprite-gen was reviewed for facing-anchor, fixed-canvas and contact-sheet QA ideas. It was not installed or run; no API credentials or paid generation services were used. The generator/runtime in this game is independently written.
 
 Pixelify Sans is the only newly bundled third-party visual asset: unmodified font from https://github.com/google/fonts/tree/main/ofl/pixelifysans , distributed under SIL Open Font License 1.1. Its complete notice is `assets/fonts/OFL.txt` and is copied into native archives as `PIXELIFY_OFL.txt`.
+
+## Checkpoint 5: consistent interludes
+`tools/generate_vignettes.py` independently draws four transparent 256×192 illustrations (camp, relic shrine, oathless pilgrim, reward coffer) from a 128×96 logical canvas. No image inputs, external assets or generation services are used. The manifest records per-image hashes and transparent bounds. They render at 512×384 logical game units. Map/event phases now reuse the existing original biome backgrounds and pixel UI. No gameplay system or story content was added.

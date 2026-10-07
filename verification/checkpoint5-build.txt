@@ -1,0 +1,25 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+Full route seed 1: 28 turns/choices, 40 essence, 120 gold
+Full route seed 2: 30 turns/choices, 45 essence, 152 gold
+Full route seed 3: 31 turns/choices, 47 essence, 150 gold
+Full route seed 42: 32 turns/choices, 49 essence, 188 gold
+Full route seed 2607: 28 turns/choices, 40 essence, 128 gold
+Full route seed 999: 33 turns/choices, 52 essence, 182 gold
+ASHEN OATH MODEL: 78 checks; 0 failures
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+UI HANDLER TESTS PASSED: 82 (headless, not rendered visual QA)
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+RESUME TEST PASSED: 7 assertions, including exact next-round continuity
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+CAMPAIGN STRESS PASSED: 50 seeds, 50 wins, 0 defeats; no hangs or invalid HP/MP. Scripted rules play, not human screen play.
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+ANIMATION TESTS PASSED: 1131 checks (runtime, studio handlers, original atlas pixels)
+ASHEN-OATH-windows-x64.zip: 36,725,442 bytes, SHA256 5a42fc9556c5b632c9b6780521eeecc7f312e0c378f9de37735b3cc6e1e83d4e
+ASHEN-OATH-linux-x64.zip: 27,955,466 bytes, SHA256 12e5edbe325742992f7a0c396f8d568b8d95cd124aed4a8883e9113a3beebc51
+
+Builds ready: /workspace/shared/ashen-oath-builds

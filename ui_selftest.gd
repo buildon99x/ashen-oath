@@ -61,6 +61,20 @@ func run_tests() -> void:
 		for child in scene.ui.get_children():
 			if child is Button:
 				check(child.position.x+child.size.x<=1441 and child.position.y+child.size.y<=901,"button stays inside viewport in "+phase)
+	for phase in ["map","event","camp","relic","reward"]:
+		scene.model.phase=phase
+		if phase in ["event","camp","relic"]: scene.model._open_event(phase)
+		scene.refresh()
+		await process_frame
+		var portraits: int=0
+		var frames: int=0
+		for child in scene.ui.get_children():
+			if child is TextureRect: portraits+=1
+			if child is Panel: frames+=1
+			if child is Label and child.autowrap_mode!=TextServer.AUTOWRAP_OFF:
+				check(child.position.y+child.size.y<=900,"wrapped copy stays within view in "+phase)
+		check(portraits==3,"three party portraits in "+phase)
+		check(frames>=4,"framed narrative and party cards in "+phase)
 	scene.model.meta.runs=1
 	scene.model.phase="victory"
 	scene.menu=false
