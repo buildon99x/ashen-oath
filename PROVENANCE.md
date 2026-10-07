@@ -13,3 +13,12 @@ Godot 4.6.3 was already installed in the execution environment. Official export 
 
 ## Checkpoint 2 art
 Every environment, titan layer and hero sprite in assets/ was newly drawn by tools/generate_art.py using authored shapes and deterministic texture. The script does not read or transform any third-party image. Original Steam screenshots were comparison references only. The artwork remains visibly simpler than the commercial reference.
+
+## Checkpoint 4: independently authored directional art and UI
+The supplied character sheet was viewed as a visual reference only; it is not included in this public repository. `tools/generate_directional_heroes.py` draws every pixel of the three original 4-facing, 5-state heroes without opening any reference image or flipping an opposite-facing frame. `tools/generate_environments.py` creates three original layered scenes, and `tools/generate_ui.py` creates panel borders and combat icons. Their manifests document dimensions, palette, frames and timing.
+
+Craftpix's public four-direction female-base page was reviewed for animation structure only: https://craftpix.net/freebies/free-base-4-direction-female-character-pixel-art/ . Its license forbids raw asset redistribution and restricts AI uses: https://craftpix.net/file-licenses/ . No Craftpix asset was downloaded, transformed or bundled.
+
+The Apache-2.0 sprite-gen repository https://github.com/aldegad/sprite-gen was reviewed for facing-anchor, fixed-canvas and contact-sheet QA ideas. It was not installed or run; no API credentials or paid generation services were used. The generator/runtime in this game is independently written.
+
+Pixelify Sans is the only newly bundled third-party visual asset: unmodified font from https://github.com/google/fonts/tree/main/ofl/pixelifysans , distributed under SIL Open Font License 1.1. Its complete notice is `assets/fonts/OFL.txt` and is copied into native archives as `PIXELIFY_OFL.txt`.

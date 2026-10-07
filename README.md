@@ -1,6 +1,6 @@
 # ASHEN OATH — The Hollow Crown
 
-![Actual native battle screen](verification/native-battle-after.jpg)
+![Actual native battle screen](verification/native-cp4-battle.jpg)
 
 [실제 플레이·비교 보고서](TEST_REPORT.html) · [빌드 방법](BUILDING.md) · [원작과 구분/출처](PROVENANCE.md)
 
@@ -34,6 +34,7 @@
 | R | 방어 |
 | Space | 라운드 종료 |
 | H | 가이드 열기/닫기 |
+| V | 4방향 캐릭터 스튜디오 |
 | M | 효과음 음소거 |
 | Esc | 메인 메뉴/복귀 |
 
@@ -54,3 +55,12 @@
 
 ## GitHub checkpoints
 The user-created `buildon99x/ashen-oath` repository is public. The initial Godot ignore rules are preserved. Native Windows/Linux exports are built and independently backed up. Repository binary distribution is not yet complete; the source project runs in Godot 4.6+. Completed archive distributions include reconstruction instructions and SHA256 checksums. Source commits and actual gameplay evidence do not imply visual parity with the commercial reference.
+
+## 4방향 애니메이션 · 체크포인트 4
+세 영웅 모두 위·아래·왼쪽·오른쪽을 독립적으로 그렸습니다. 96×112 셀, 발 기준점 (48,101), 총 372프레임입니다. Idle 6프레임/6fps, Walk 8/10fps, Attack 8/12fps, Hurt 3/10fps, Death 6/8fps. 좌우를 단순 반전하지 않으며 무기 손과 장비 비대칭을 유지합니다.
+
+V로 스튜디오를 열어 1/2/3 영웅 선택, 방향키 이동, Space 공격, H 피격, K 사망, R 초기화, P 일시정지를 시험할 수 있습니다. 버튼으로 동작·방향·속도와 프레임을 선택할 수 있습니다. Escape로 메뉴로 돌아간 뒤 Resume으로 진행 중 전투를 복구합니다.
+
+![실제 실행 파일의 4방향 스튜디오](verification/native-cp4-studio.jpg)
+
+배경 3종과 패널·속성 아이콘을 새로 만들고 Pixelify Sans(SIL OFL 1.1)를 적용했습니다. 실제 Linux 실행 파일에서 1180×812 창의 지도·사건·보스 전투·공격 후 파괴 상태·스튜디오 왕복 및 저장 복구를 확인했습니다. 스튜디오 1280×800 검증과 자동 애니메이션 1,131검사를 별도로 기록했습니다. 캐릭터 동작은 개선되었지만 원본 참고 이미지의 세밀한 수작업 표현, 원작의 적 다양성·입체 조명·연출 수준과는 차이가 있습니다.

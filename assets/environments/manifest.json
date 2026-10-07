@@ -1,0 +1,52 @@
+{
+  "title": "Ashen Oath original environment illustrations",
+  "native_size": [
+    720,
+    450
+  ],
+  "recommended_scale": 2,
+  "filter": "nearest",
+  "authorship": "Original code-native pixel illustration by the project assistant using authored Pillow primitives and deterministic seeds. No source-game, user-reference, downloaded, generated-model, or third-party image pixels included.",
+  "generator": "tools/generate_environments.py",
+  "palette_style": "Limited cohesive ramps; clustered texture; no antialiasing, blur or photographic noise.",
+  "safe_stage": {
+    "horizon_y": [
+      115,
+      145
+    ],
+    "ground_detail_y": [
+      180,
+      285
+    ],
+    "character_feet_y": 250
+  },
+  "scenes": [
+    {
+      "file": "cinder_forest.png",
+      "size": [
+        720,
+        450
+      ],
+      "sha256": "185997d725d7cfcee400ad74ed1ee03f90dc21406f2062ce8cb8bac8832572df",
+      "bytes": 88849
+    },
+    {
+      "file": "drowned_reliquary.png",
+      "size": [
+        720,
+        450
+      ],
+      "sha256": "1d37abee34e583f9ff642b1b561a024422d6eaadb9aac6bbf8d0f07452526f55",
+      "bytes": 93636
+    },
+    {
+      "file": "pale_throne.png",
+      "size": [
+        720,
+        450
+      ],
+      "sha256": "e3d016b5cbb539be2305fd8e949b480ba85d86365291a993ab99dab278c4b0ef",
+      "bytes": 95559
+    }
+  ]
+}

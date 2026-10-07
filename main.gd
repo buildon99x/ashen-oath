@@ -1,6 +1,7 @@
 extends Node2D
 
 const Model = preload("res://model.gd")
+const HeroAnimation = preload("res://animated_hero.gd")
 const GOLD = Color("d6b77d")
 const TEAL = Color("78c9be")
 const INK = Color("0e171e")
@@ -9,6 +10,9 @@ var model = Model.new()
 var forest: Texture2D = preload("res://assets/cinder_forest.png")
 var titan_sprites: Array = []
 var hero_sprites: Array = []
+var actors: Array[Node2D]=[]
+var environments: Array[Texture2D]=[]
+var party_feet: Array[Vector2]=[Vector2(420,480),Vector2(520,510),Vector2(620,540)]
 var ui: Control
 var selected_hero: int = 0
 var selected_part: int = 0
@@ -29,6 +33,8 @@ var font: Font = ThemeDB.fallback_font
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(INK)
+	if ResourceLoader.exists("res://assets/fonts/PixelifySans.ttf"):
+		font=load("res://assets/fonts/PixelifySans.ttf")
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 	for tier in range(1,4):
 		var layers: Array=[]
@@ -39,6 +45,17 @@ func _ready() -> void:
 		hero_sprites.append(load("res://assets/hero_%d.png" % i))
 	model.load_meta()
 	model.load_resume()
+	for i in range(3):
+		var actor: Node2D=HeroAnimation.new()
+		actor.hero_index=i
+		actor.facing="right"
+		actor.position=party_feet[i]
+		actor.scale=Vector2(1.25,1.25)
+		add_child(actor)
+		actors.append(actor)
+	for path in ["cinder_forest","drowned_reliquary","pale_throne"]:
+		var file: String="res://assets/environments/"+path+".png"
+		environments.append(load(file) as Texture2D if ResourceLoader.exists(file) else forest)
 	ui = Control.new()
 	add_child(ui)
 	audio = AudioStreamPlayer.new()
@@ -50,13 +67,22 @@ func _process(delta: float) -> void:
 	hit_flash = maxf(0.0, hit_flash - delta * 2.0)
 	fx_time=maxf(0.0,fx_time-delta)
 	enemy_flash=maxf(0.0,enemy_flash-delta*2)
+	for i in range(actors.size()):
+		var actor: Node2D=actors[i]
+		actor.visible=not menu and model.phase=="battle"
+		actor.position=party_feet[i]
+		if actor.visible and model.heroes.size()==3:
+			if model.heroes[i].hp<=0 and actor.state!="death": actor.play_state("death",true)
+			elif model.heroes[i].hp>0 and actor.state=="death": actor.play_state("idle",true)
 	queue_redraw()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var key: int = event.keycode
-	if key == KEY_H:
+	if key == KEY_V:
+		get_tree().change_scene_to_file("res://character_studio.tscn")
+	elif key == KEY_H:
 		help_open = not help_open
 		refresh()
 	elif key == KEY_M:
@@ -92,7 +118,9 @@ func style(color: Color, border: Color = Color.TRANSPARENT) -> StyleBoxFlat:
 	s.bg_color = color
 	s.border_color = border
 	s.set_border_width_all(1)
-	s.set_corner_radius_all(5)
+	s.set_corner_radius_all(0)
+	s.shadow_color=Color(0,0,0,0.4)
+	s.shadow_size=3
 	s.content_margin_left = 16
 	s.content_margin_right = 16
 	s.content_margin_top = 10
@@ -104,6 +132,7 @@ func label_at(text: String, pos: Vector2, size: int = 20, color: Color = PALE, w
 	l.text = text
 	l.position = pos
 	l.size = Vector2(width, 35)
+	l.add_theme_font_override("font",font)
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_font_size_override("font_size", size)
 	ui.add_child(l)
@@ -115,6 +144,7 @@ func paragraph(text: String, pos: Vector2, width: float, size: int = 18, color: 
 	l.text = text
 	l.position = pos
 	l.size = Vector2(width, 0)
+	l.add_theme_font_override("font",font)
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_font_size_override("font_size", size)
 	ui.add_child(l)
@@ -127,11 +157,12 @@ func button(text: String, rect: Rect2, action: Callable, active: bool = false, d
 	b.size = rect.size
 	b.disabled = disabled
 	b.add_theme_font_size_override("font_size", 18)
+	b.add_theme_font_override("font",font)
 	b.add_theme_color_override("font_color", GOLD if active else PALE)
-	b.add_theme_stylebox_override("normal", style(Color("23323a") if active else Color("142129"), GOLD if active else Color("3b4b4e")))
-	b.add_theme_stylebox_override("hover", style(Color("2a4248"), TEAL))
-	b.add_theme_stylebox_override("pressed", style(Color("385354"), GOLD))
-	b.add_theme_stylebox_override("disabled", style(Color("101b21"), Color("243138")))
+	b.add_theme_stylebox_override("normal", pixel_frame("gold" if active else "normal"))
+	b.add_theme_stylebox_override("hover", pixel_frame("hover"))
+	b.add_theme_stylebox_override("pressed", pixel_frame("gold"))
+	b.add_theme_stylebox_override("disabled", pixel_frame("disabled"))
 	b.pressed.connect(action)
 	ui.add_child(b)
 	return b
@@ -157,8 +188,9 @@ func refresh() -> void:
 		child.queue_free()
 	label_at("A S H E N   O A T H", Vector2(38, 22), 25, GOLD)
 	label_at("THE HOLLOW CROWN", Vector2(40, 55), 12, TEAL)
-	button("H  Guide", Rect2(1140, 25, 120, 42), func(): help_open = not help_open; refresh())
-	button("M  " + ("Muted" if muted else "Sound"), Rect2(1270, 25, 130, 42), func(): muted = not muted; refresh())
+	button("V  Sprites",Rect2(990,25,120,42),func(): get_tree().change_scene_to_file("res://character_studio.tscn"))
+	button("H  Guide", Rect2(1120, 25, 120, 42), func(): help_open = not help_open; refresh())
+	button("M  " + ("Muted" if muted else "Sound"), Rect2(1250, 25, 150, 42), func(): muted = not muted; refresh())
 	if menu:
 		show_menu()
 	else:
@@ -216,7 +248,15 @@ func show_battle() -> void:
 	for i in range(model.heroes.size()):
 		var h: Dictionary = model.heroes[i]
 		var t: String = "%d  %s  /  %s\nHP %d/%d   MP %d/%d  %s" % [i+1, h.get("name",""), h.get("role",""), h.get("hp",0), h.get("max_hp",0), h.get("mp",0), h.get("max_mp",0), "ACTED" if h.get("acted",false) else "READY"]
-		button(t, Rect2(40+i*455, 592, 440, 84), select_hero.bind(i), i == selected_hero, h.get("hp",0)<=0)
+		var hero_button=button(t, Rect2(40+i*455, 592, 440, 84), select_hero.bind(i), i == selected_hero, h.get("hp",0)<=0)
+		var portrait=AtlasTexture.new()
+		portrait.atlas=load("res://assets/heroes/"+["mara","ivo","sable"][i]+".png")
+		portrait.region=Rect2(22,4,52,48)
+		hero_button.icon=portrait
+		hero_button.expand_icon=true
+		hero_button.add_theme_constant_override("icon_max_width",42)
+		meter(Rect2(99+i*455,662,170,4),float(h.hp)/maxf(1,float(h.max_hp)),Color("a7c48e"))
+		meter(Rect2(280+i*455,662,177,4),float(h.mp)/maxf(1,float(h.max_mp)),Color("79b6bf"))
 	var hero: Dictionary = model.heroes[selected_hero]
 	var skills: Array = hero.get("skills",[])
 	for i in range(skills.size()):
@@ -224,6 +264,11 @@ func show_battle() -> void:
 		var keys: Array = ["Q", "W", "E", "R"]
 		var b = button("%s  %s\n%s  ·  %d MP" % [keys[i], skill.get("name",""), skill.get("type","").to_upper(), skill.get("cost",0)], Rect2(40+i*250, 697, 235, 68), perform.bind(i), false, hero.get("acted",false) or hero.get("hp",0)<=0 or hero.get("mp",0)<skill.get("cost",0))
 		b.tooltip_text = skill.get("description","")
+		var icon_path: String="res://assets/ui/"+skill.get("type","slash")+".png"
+		if ResourceLoader.exists(icon_path):
+			b.icon=load(icon_path)
+			b.expand_icon=true
+			b.add_theme_constant_override("icon_max_width",22)
 	button("SPACE\nEND ROUND", Rect2(1060, 697, 340, 68), finish_round, true)
 	var lines: Array = model.log.slice(maxi(0,model.log.size()-3))
 	paragraph("\n".join(lines), Vector2(42, 790), 1320, 16, Color("adc0bd"))
@@ -250,6 +295,8 @@ func perform(index: int) -> void:
 		fx_kind=model.heroes[actor].skills[index].type
 		fx_damage=before_hp-int(model.boss.get("hp",0))
 		fx_time=0.85
+		if actors.size()==3:
+			actors[actor].play_state("idle" if index==3 else "attack",true)
 		hit_flash = 0.6
 		tone(160 + index * 90, 0.12)
 		message = ""
@@ -268,7 +315,12 @@ func perform(index: int) -> void:
 
 func finish_round() -> void:
 	enemy_flash=0.7
+	var before: Array[int]=[]
+	for hero in model.heroes:before.append(hero.hp)
 	model.end_round()
+	for i in range(mini(actors.size(),model.heroes.size())):
+		if model.heroes[i].hp<=0:actors[i].play_state("death",true)
+		elif model.heroes[i].hp<before[i]:actors[i].play_state("hurt",true)
 	tone(70,0.2)
 	selected_hero = 0
 	for i in range(model.heroes.size()):
@@ -346,7 +398,7 @@ func show_help() -> void:
 	panel.add_theme_stylebox_override("panel",style(Color("101c24"),GOLD))
 	ui.add_child(panel)
 	label_at("THE ART OF UNMAKING",Vector2(285,135),32,GOLD)
-	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves the visible omen.\n5. Guard to reduce damage and conserve strength. MP recovers each round.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • H guide • M sound • Esc menu\n\nThere are no timers. Hover a skill for its detailed effect.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,21)
+	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves the visible omen.\n5. Guard to reduce damage and conserve strength. MP recovers each round.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • V character studio • H guide • M sound • Esc menu\n\nThere are no timers. Hover a skill for its detailed effect.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,21)
 	button("CLOSE GUIDE",Rect2(855,716,285,50),func(): help_open=false; refresh(),true)
 
 func tone(frequency: float, duration: float) -> void:
@@ -383,7 +435,8 @@ func _draw() -> void:
 		var y: float = fmod(i*97.3-clock_time*8+1800,900)
 		draw_circle(Vector2(x,y),1.5,Color(0.8,0.68,0.43,0.2+0.15*sin(clock_time+i)))
 	if menu or model.phase=="battle":
-		draw_texture_rect(forest,Rect2(0,65,1440,615),false)
+		var biome: int=clampi(int(model.run.get("node",0))/3,0,2)
+		draw_texture_rect(environments[biome] if environments.size()==3 else forest,Rect2(0,0,1440,900),false)
 		if menu:
 			draw_rect(Rect2(0,80,680,820),Color(0.035,0.06,0.075,0.65))
 		# soft grounded arena shadow
@@ -392,9 +445,13 @@ func _draw() -> void:
 	if menu:
 		draw_titan(Vector2(1020,598),1.15)
 	elif model.phase == "battle":
-		draw_titan(Vector2(790,514),0.84)
+		draw_titan(Vector2(865,525),0.90)
 		for i in range(3):
-			draw_hero(Vector2(380+i*88,497+i*12),i)
+			draw_ellipse_shadow(party_feet[i])
+			if i==selected_hero:
+				draw_set_transform(party_feet[i],0,Vector2(1,0.3))
+				draw_arc(Vector2.ZERO,32,0,TAU,40,GOLD,2)
+				draw_set_transform(Vector2.ZERO)
 		draw_combat_fx()
 		box(Rect2(25,578,1390,303),Color(0.03,0.07,0.1,0.94),Color("39484c"))
 		box(Rect2(25,175,320,306),Color(0.03,0.07,0.1,0.8))
@@ -527,11 +584,11 @@ func draw_combat_fx() -> void:
 	if fx_time<=0.0:
 		return
 	var progress: float=1.0-fx_time/0.85
-	var start: Vector2=Vector2(400+fx_actor*88,450+fx_actor*12)
+	var start: Vector2=party_feet[fx_actor]+Vector2(18,-54)
 	var offsets: Array=[Vector2(0,-65),Vector2(0,-242),Vector2(0,-371)]
-	var target: Vector2=Vector2(790,514)+offsets[fx_part]*0.84
+	var target: Vector2=Vector2(865,525)+offsets[fx_part]*0.90
 	if model.parts.size()>0 and model.parts[0].get("severed",false):
-		target.y+=67.2
+		target.y+=72.0
 	var color: Color=TEAL if fx_kind=="arcane" else GOLD
 	if fx_kind=="guard":
 		draw_arc(start+Vector2(-18,10),45,0,TAU,32,Color(0.48,0.78,0.72,fx_time),3)
@@ -546,3 +603,30 @@ func draw_combat_fx() -> void:
 			var distance: float=(progress-0.45)*100
 			draw_line(target+direction*distance,target+direction*(distance+10),Color(color,fx_time),2)
 		draw_string(font,target+Vector2(-12,-20-progress*34),str(fx_damage),HORIZONTAL_ALIGNMENT_LEFT,-1,30,Color(1,0.86,0.56,fx_time*1.2))
+
+func pixel_frame(variant: String) -> StyleBoxTexture:
+	var frame=StyleBoxTexture.new()
+	frame.texture=load("res://assets/ui/panel_"+variant+".png")
+	frame.texture_margin_left=8
+	frame.texture_margin_right=8
+	frame.texture_margin_top=8
+	frame.texture_margin_bottom=8
+	frame.content_margin_left=16
+	frame.content_margin_right=16
+	frame.content_margin_top=10
+	frame.content_margin_bottom=10
+	return frame
+
+func meter(rect: Rect2, ratio: float, color: Color) -> void:
+	var back=ColorRect.new()
+	back.position=rect.position
+	back.size=rect.size
+	back.color=Color("080f15")
+	back.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	ui.add_child(back)
+	var fill=ColorRect.new()
+	fill.position=rect.position
+	fill.size=Vector2(rect.size.x*clampf(ratio,0,1),rect.size.y)
+	fill.color=color
+	fill.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	ui.add_child(fill)
