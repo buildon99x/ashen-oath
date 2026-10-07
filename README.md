@@ -1,5 +1,9 @@
 # ASHEN OATH — The Hollow Crown
 
+![Actual native battle screen](verification/native-battle-after.jpg)
+
+[실제 플레이·비교 보고서](TEST_REPORT.html) · [빌드 방법](BUILDING.md) · [원작과 구분/출처](PROVENANCE.md)
+
 오리지널 에셋·코드로 구현한 Godot 턴제 로그라이트입니다. The Severed Gods의 공식 공개 설명에서 확인한 부위별 방어 파괴와 절단, 파티 전투, 경로 선택과 윤회 성장의 핵심 루프를 참고했습니다. 원작의 전체 복제품이나 원작 분량에 상응하는 게임은 아닙니다.
 
 ## 실행
@@ -49,4 +53,4 @@
 `TEST_REPORT.html`에서 실행한 검사와 미실행 범위를 확인하세요. headless 검사와 실제 native UI 플레이 검증을 구분해 기록했습니다. 첫 전투의 승리/보상과 재시작 후 저장 복구는 직접 키보드·마우스로 검증했습니다. 전체 9구간과 3보스의 직접 화면 완주도 검증했습니다. 승리 결과는 Ash 51 / Gold 153 / Karma +11이었습니다. 원작과의 동등 품질은 미달입니다.
 
 ## GitHub checkpoints
-The user-created `buildon99x/ashen-oath` repository is public. The initial Godot ignore rules are preserved. Native archives are uploaded as manageable numbered parts; reconstruction instructions and SHA256 checksums accompany the distribution. Source commits and actual gameplay evidence do not imply visual parity with the commercial reference.
+The user-created `buildon99x/ashen-oath` repository is public. The initial Godot ignore rules are preserved. Native Windows/Linux exports are built and independently backed up. Repository binary distribution is not yet complete; the source project runs in Godot 4.6+. Completed archive distributions include reconstruction instructions and SHA256 checksums. Source commits and actual gameplay evidence do not imply visual parity with the commercial reference.
