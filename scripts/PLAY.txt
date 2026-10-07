@@ -1,0 +1,33 @@
+ASHEN OATH - The Hollow Crown
+Original turn-based roguelite, built with Godot 4.6.3
+
+START
+Windows x64: Extract the entire ZIP, then open ashen-oath.exe.
+Linux x64: Extract the entire ZIP, then run ./ashen-oath.x86_64.
+If needed on Linux, use: chmod +x ashen-oath.x86_64
+No Godot editor installation, online account, or internet connection is needed.
+
+CONTROLS
+Mouse: all menus, hero/part/skill selection
+1 / 2 / 3: select a hero
+Up / Down: select an enemy part
+Q / W / E: skill; R: guard; Space: end round
+H: guide; M: mute sound; Escape: menu / return
+
+Combat: match an attack to a part's weakness to break its armor.
+Destroy the part to stop its attacks. Every living hero acts once each round.
+Read OMEN before ending the round. Route choices, relics, and rest matter.
+Permanent Ash upgrades are saved automatically in your user data directory.
+The current journey saves after every choice. Resume it from the title screen.
+
+Unsigned Windows builds may trigger SmartScreen. This build is not code-signed.
+The Windows export was generated and inspected on Linux; Windows-native
+runtime testing is still required. See the repository's current test report.
+
+ENGINE LICENSE
+This game includes the MIT-licensed Godot Engine. Its license and third-party
+notices are supplied in GODOT_LICENSE.txt and GODOT_THIRD_PARTY_NOTICES.txt.
+https://godotengine.org/license/
+
+This original project uses no The Severed Gods code, artwork, audio, dialogue,
+characters, or other assets. It is not endorsed by or affiliated with its maker.
