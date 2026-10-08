@@ -1,0 +1,14 @@
+Ashen Korean Regular
+
+A display font bundled for Korean and English game UI.
+Derived from the installed Debian fonts-noto-cjk NotoSansCJK-Regular.ttc.
+Upstream: https://github.com/notofonts/noto-cjk
+The collection was inspected: face 1 is Noto Sans CJK KR Regular.
+Subsetting was performed with fontTools, retaining layout features and all source glyphs in the Unicode ranges recorded in AshenKorean-PROVENANCE.json.
+All 11,172 modern Hangul syllables (U+AC00–U+D7A3), Jamo, compatibility Jamo, Latin, punctuation, and available game symbols are included. Extended archaic Jamo available in the source are retained. Other languages and arbitrary CJK ideographs are not guaranteed.
+The modified font was renamed Ashen Korean (including CFF and OpenType name fields).
+Original OpenType copyright: © 2014-2021 Adobe (http://www.adobe.com/).
+The distribution copyright notice also credits 2010-2012 Google Corporation.
+License: SIL Open Font License 1.1, retained in AshenKorean-OFL.txt.
+No upstream endorsement is implied. Font is not sold separately.
+Godot localization_selftest.gd checks Hangul glyph indexes, shaping, representative punctuation, and every translated catalog glyph.

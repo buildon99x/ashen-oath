@@ -1,6 +1,7 @@
 extends Node2D
 ## In-game animation viewer. Arrows move the character; no model/save mutation.
 
+const Localization = preload("res://localization.gd")
 const HeroScript = preload("res://animated_hero.gd")
 const GOLD: Color = Color("d6b77d")
 const TEAL: Color = Color("78c9be")
@@ -36,6 +37,7 @@ var _event_seconds: float = 0.0
 var _pixel_frames: Dictionary = {}
 
 func _ready() -> void:
+	Localization.load_preferences()
 	RenderingServer.set_default_clear_color(INK)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hero = HeroScript.new()
@@ -57,8 +59,9 @@ func _ready() -> void:
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Local inheritance keeps the studio consistent without changing ThemeDB.
 	var studio_theme: Theme = Theme.new()
-	if ResourceLoader.exists("res://assets/fonts/PixelifySans.ttf"):
-		studio_theme.default_font = load("res://assets/fonts/PixelifySans.ttf") as Font
+	studio_theme.default_font = Localization.load_display_font()
+	studio_theme.set_font("font", "TooltipLabel", studio_theme.default_font)
+	get_window().title = Localization.t("ASHEN OATH — Character Studio")
 	studio_theme.default_font_size = 16
 	ui.theme = studio_theme
 	add_child(ui)
@@ -76,7 +79,7 @@ func _process(delta: float) -> void:
 	if _event_seconds > 0.0:
 		_event_seconds = maxf(0.0, _event_seconds - delta)
 		if is_zero_approx(_event_seconds):
-			event_label.text = "Clips hold their foot anchor; movement is controlled separately"
+			event_label.text = Localization.t("Clips hold their foot anchor; movement is controlled separately")
 	_update_status()
 	queue_redraw()
 
@@ -85,6 +88,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	var key: int = event.keycode
 	match key:
+		KEY_L:
+			toggle_language()
 		KEY_ESCAPE:
 			# Scene changes detach this node immediately; consume input first.
 			get_viewport().set_input_as_handled()
@@ -197,7 +202,7 @@ func _on_state_changed(_animation: String) -> void:
 	_refresh_ui()
 
 func _on_animation_event(_animation: String, event_name: String) -> void:
-	event_label.text = "Animation event: %s  /  frame 05  /  foot position unchanged" % event_name.to_upper()
+	event_label.text = Localization.t("Animation event: %s  /  frame 05  /  foot position unchanged" % event_name.to_upper())
 	_event_seconds = 1.4
 
 func _return_to_game() -> void:
@@ -206,6 +211,7 @@ func _return_to_game() -> void:
 func _build_ui() -> void:
 	_label("A S H E N   O A T H", Vector2(38, 21), 25, GOLD)
 	_label("CHARACTER STUDIO  /  GENERATED ART + ANIMATION RIG", Vector2(40, 57), 13, TEAL)
+	_button("L  한국어" if Localization.get_language() == "ko" else "L  English", Rect2(1010,28,162,42), toggle_language)
 	_button("ESC  Back to game", Rect2(1182, 28, 220, 42), _return_to_game)
 	_label("THE WANDERERS", Vector2(54, 130), 16, GOLD)
 	for index in range(HERO_NAMES.size()):
@@ -224,8 +230,8 @@ func _build_ui() -> void:
 		direction_buttons[direction_name] = _button(direction_name.capitalize(), Rect2(54 + index * 76, 525, 66, 39), select_facing.bind(direction_name), 15)
 	pause_button = _button("P  Pause", Rect2(54, 594, 141, 42), toggle_pause, 16)
 	speed_button = _button("Speed  1×", Rect2(207, 594, 141, 42), cycle_speed, 16)
-	_check("Anchors", "A  Show foot anchors", Vector2(52, 663), true, set_anchors)
-	_check("Checker", "C  Transparency checker", Vector2(52, 703), true, set_checker)
+	_check("Anchors", "A  Show foot anchors", Vector2(52, 663), show_anchors, set_anchors)
+	_check("Checker", "C  Transparency checker", Vector2(52, 703), show_checker, set_checker)
 	_label("ARROWS   Move in four directions\nSPACE   Attack     H   Hurt\nK   Death     R   Reset", Vector2(54, 761), 15, MUTED, Vector2(298, 73))
 	title_label = _label("", Vector2(420, 129), 25, PALE, Vector2(750, 37))
 	_label("Image-generated poses  /  2.5× preview  /  live mesh animation", Vector2(420, 167), 14, MUTED)
@@ -248,19 +254,19 @@ func _build_ui() -> void:
 	_label("Foot anchor  48, 101 px", Vector2(40, 862), 13, MUTED)
 
 func _update_status() -> void:
-	status_label.text = "%s  /  %s  /  %02d OF %02d" % [hero.state.to_upper(), hero.facing.to_upper(), hero.frame + 1, hero.frame_count()]
+	status_label.text = Localization.t("%s  /  %s  /  %02d OF %02d" % [hero.state.to_upper(), hero.facing.to_upper(), hero.frame + 1, hero.frame_count()])
 	frame_slider.set_block_signals(true)
 	frame_slider.max_value = hero.frame_count() - 1
 	frame_slider.set_value_no_signal(hero.frame)
 	frame_slider.set_block_signals(false)
-	fps_label.text = "%d FPS  ·  %s" % [int(hero.clip_fps()), "LOOP" if hero.clip_loops() else "ONE SHOT"]
+	fps_label.text = Localization.t("%d FPS  ·  %s" % [int(hero.clip_fps()), "LOOP" if hero.clip_loops() else "ONE SHOT"])
 
 func _refresh_ui() -> void:
 	if ui == null or pause_button == null:
 		return
-	title_label.text = "%s  /  %s" % [HERO_NAMES[selected_hero], HERO_TITLES[selected_hero]]
-	pause_button.text = "P  Play" if paused else "P  Pause"
-	speed_button.text = "Speed  %s×" % ("0.5" if is_equal_approx(playback_speed, 0.5) else str(int(playback_speed)))
+	title_label.text = Localization.t("%s  /  %s" % [HERO_NAMES[selected_hero], HERO_TITLES[selected_hero]])
+	pause_button.text = Localization.t("P  Play" if paused else "P  Pause")
+	speed_button.text = Localization.t("Speed  %s×" % ("0.5" if is_equal_approx(playback_speed, 0.5) else str(int(playback_speed))))
 	for index in range(hero_buttons.size()):
 		_mark_active(hero_buttons[index], index == selected_hero)
 	for state_name in state_buttons:
@@ -300,9 +306,10 @@ func _pixel_frame(variant: String) -> StyleBox:
 
 func _button(text: String, bounds: Rect2, action: Callable, font_size: int = 17) -> Button:
 	var control: Button = Button.new()
-	control.text = text
+	control.text = Localization.t(text)
 	control.position = bounds.position
 	control.size = bounds.size
+	control.set_meta("layout_rect", bounds)
 	control.focus_mode = Control.FOCUS_NONE
 	control.add_theme_font_size_override("font_size", font_size)
 	control.add_theme_color_override("font_color", PALE)
@@ -319,7 +326,7 @@ func _mark_active(control: Button, active: bool) -> void:
 
 func _label(text: String, location: Vector2, font_size: int, color: Color, dimensions: Vector2 = Vector2(980, 34)) -> Label:
 	var control: Label = Label.new()
-	control.text = text
+	control.text = Localization.t(text)
 	control.position = location
 	control.size = dimensions
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -331,7 +338,7 @@ func _label(text: String, location: Vector2, font_size: int, color: Color, dimen
 func _check(node_name: String, text: String, location: Vector2, value: bool, action: Callable) -> void:
 	var control: CheckBox = CheckBox.new()
 	control.name = node_name
-	control.text = text
+	control.text = Localization.t(text)
 	control.position = location
 	control.size = Vector2(298, 34)
 	control.focus_mode = Control.FOCUS_NONE
@@ -371,3 +378,21 @@ func _draw() -> void:
 		_checker(Rect2(bounds.position + Vector2(8, 40), Vector2(226, 137)), 16)
 	draw_line(Vector2(54, 335), Vector2(348, 335), Color("314046"), 1.0)
 	draw_line(Vector2(54, 579), Vector2(348, 579), Color("314046"), 1.0)
+
+func toggle_language() -> void:
+	Localization.set_language("en" if Localization.get_language() == "ko" else "ko")
+	var preference_saved: bool = Localization.save_preferences()
+	ui.theme.default_font = Localization.load_display_font()
+	ui.theme.set_font("font", "TooltipLabel", ui.theme.default_font)
+	get_window().title = Localization.t("ASHEN OATH — Character Studio")
+	for child in ui.get_children():
+		ui.remove_child(child)
+		child.queue_free()
+	hero_buttons.clear()
+	state_buttons.clear()
+	direction_buttons.clear()
+	_build_ui()
+	_refresh_ui()
+	if not preference_saved:
+		event_label.text = Localization.t("The language preference could not be saved.")
+		_event_seconds = 4.0

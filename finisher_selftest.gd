@@ -1,4 +1,5 @@
 extends SceneTree
+const Localization = preload("res://localization.gd")
 ## CP10 deterministic scene/model checks. This is headless evidence, not visual QA.
 ## Run with a fresh writable XDG_DATA_HOME, XDG_CONFIG_HOME and XDG_CACHE_HOME:
 ## runtime=$(mktemp -d /tmp/ashen-oath-finisher-selftest.XXXXXX)
@@ -18,6 +19,8 @@ func check(ok: bool, description: String) -> void:
 		push_error("FINISHER FAIL: " + description)
 
 func _initialize() -> void:
+	Localization.set_language("en")
+	Localization.save_preferences()
 	call_deferred("run_tests")
 
 func run_tests() -> void:
@@ -57,7 +60,11 @@ func make_scene():
 	return scene
 
 func start_fixture(scene, tier: int = 1, final_boss: bool = false) -> void:
+	Localization.set_language("en")
+	Localization.save_preferences()
+	scene.apply_language_theme()
 	scene.model = Model.new()
+	scene.model._clear_journey()
 	scene.model.persist_meta = false
 	scene.model.meta = {"essence": 7, "upgrades": {"vitality": 0, "force": 0, "focus": 0}, "runs": 4, "wins": 2}
 	scene.model.new_run(10429)
@@ -194,7 +201,7 @@ func test_kill_paths(scene) -> void:
 		check(scene.generated_monster.visible, "monster remains visible during presentation")
 		for actor in scene.actors:
 			check(actor.visible, "party remains visible during presentation")
-		check(live_buttons(scene).size() == 1 and reward_buttons(scene).is_empty(), "only the skip control exists during presentation")
+		check(live_buttons(scene).size() == 2 and reward_buttons(scene).is_empty(), "only skip and language controls exist during presentation")
 		var snapshot: PackedByteArray = model_snapshot(scene.model)
 		await process_frame
 		await process_frame
@@ -231,6 +238,7 @@ func test_kill_paths(scene) -> void:
 
 func test_guards_and_stale_buttons(scene) -> void:
 	start_fixture(scene)
+	var language_before: String = Localization.get_language()
 	var stale: Array[Button] = live_buttons(scene)
 	var callback_hits: Array[int] = [0]
 	stale.append(scene.button("stale reward", Rect2(65, 520, 410, 176), scene.choose_reward.bind(1)))
@@ -249,6 +257,7 @@ func test_guards_and_stale_buttons(scene) -> void:
 		check(presentation_snapshot(scene) == ui_before, "active finisher guards presentation action " + str(action))
 	for old_button in stale:
 		old_button.pressed.emit()
+	check(Localization.get_language() == language_before, "queued stale language button is also swallowed")
 	check(callback_hits[0] == 0, "generic stale button closure is gated")
 	check(model_snapshot(scene.model) == before and presentation_snapshot(scene) == ui_before, "all queued stale battle and reward button emissions are swallowed")
 	scene.refresh()
@@ -332,7 +341,10 @@ func test_input_routes(scene) -> void:
 	start_fixture(scene)
 	hp_kill(scene)
 	before = model_snapshot(scene.model)
-	var skip: Button = live_buttons(scene)[0]
+	var skip: Button = null
+	for candidate in live_buttons(scene):
+		if "SKIP" in candidate.text: skip = candidate
+	check(skip != null, "finisher exposes the explicit skip control")
 	skip.pressed.emit()
 	skip.pressed.emit()
 	check(not scene.finisher_active() and model_snapshot(scene.model) == before, "skip button signal and repeated stale skip signal finish presentation only")
@@ -479,10 +491,9 @@ func test_save_and_reload(scene) -> void:
 	var before: PackedByteArray = model_snapshot(scene.model)
 	var save_path: String = "user://ashen_oath_journey.save"
 	check(FileAccess.file_exists(save_path), "refresh saves the resolved reward while finisher is active")
-	var file: FileAccess = FileAccess.open(save_path, FileAccess.READ)
-	if file != null:
-		var saved: Dictionary = file.get_var(false)
-		file.close()
+	var record: Dictionary = scene.model._read_record(save_path)
+	if not record.is_empty():
+		var saved: Dictionary = record.journey
 		check(saved.phase == "reward" and saved.run.battles_won == 1, "on-disk journey contains reward phase and one awarded battle")
 		check(not saved.has("finisher_remaining") and not saved.has("finisher_cuts"), "presentation state is never serialized into the journey")
 	else:

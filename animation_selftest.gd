@@ -1,4 +1,5 @@
 extends SceneTree
+const Localization = preload("res://localization.gd")
 ## Run: godot --headless --path . --script res://animation_selftest.gd
 ## Before art is generated: append -- --runtime-only (assets not verified).
 
@@ -19,6 +20,8 @@ func check(value: bool, description: String) -> void:
 		push_error("ANIMATION FAIL: " + description)
 
 func _initialize() -> void:
+	Localization.set_language("en")
+	Localization.save_preferences()
 	call_deferred("run_tests")
 
 func run_tests() -> void:

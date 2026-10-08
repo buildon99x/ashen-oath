@@ -67,8 +67,19 @@ In a sandbox with a read-only home, prefix with writable `XDG_DATA_HOME`, `XDG_C
 
 The self-test covers deterministic seeds, state snapshot isolation, action validation/economy, guard, focus costs, break-before-sever, disabling telegraphs, rewards, camp revival, event affordability and sacrifice, unique relics, karma consequences, defeat settlement, permanent upgrades, save/load, and a naturally played full nine-crossing victory.
 
-## Journey persistence (checkpoint 2)
-`save_resume(path)` writes a versioned, object-free Godot Variant snapshot atomically via a temporary file. `load_resume(path)` validates the envelope and restores the complete run, meta, action state and RNG seed/state. Default path is user://ashen_oath_journey.save. Main UI saves after every accepted choice/render refresh, and resumes from the title screen. `resume_selftest.gd` verifies exact next-round continuity.
+## Journey persistence (checkpoint 12)
+
+`save_meta()` and `save_resume(path)` each commit a **complete** version-2 transaction: revision, vault, exact journey, action state and RNG seed/state. A UTF-8 JSON envelope contains an object-free Variant payload and SHA-256 integrity checksum. The existing filenames remain `user://ashen_oath_meta.json` and `user://ashen_oath_journey.save`. Before atomic replacement, writes are flushed and read-verified; a valid previous primary is protected as `.bak`. Uncommitted temporary files are never loaded.
+
+Loading chooses the latest fully valid transaction across the pair and backups. It never merges currencies or takes their maximum, because purchases legitimately reduce Ash. Same-revision disagreement and a stale process attempting to overwrite a newer revision are refused. A settlement, permanent purchase or new-cycle replacement commits inside the model rather than relying on a later UI save. `retry_save()` repairs both copies without bypassing conflict checks.
+
+Version-1 JSON vaults and length-prefixed object-free journey snapshots remain readable. Where old files disagree, monotonic run/win/upgrade evidence is used; a newer vault with an unsafe old unfinished journey retains the vault and retires that journey instead of banking it twice. Ambiguity is surfaced rather than inventing a merged state.
+
+`save_status` / `save_message` expose write failure separately from command acceptance. `recovery_status` / `recovery_message` persist until `clear_recovery_notice()`. UI warnings offer retry and, for conflicts, explicit confirmed reload. A write failure means the accepted action is still only in memory. Backup recovery may require replaying recent actions. Headless fault fixtures cover both formats, interrupted commits, checksums, corruption, settlements, spending, exact RNG continuation, all phases, conflicts and stale writers; actual native recovery screens are separate evidence.
+
+## Localization and onboarding (checkpoint 12)
+
+Canonical model identifiers, skills, intents and saved logs stay in English so rule comparisons and old campaigns remain stable. `localization.gd` translates the display boundary to Korean by default, including joined log lines and formatted templates. `L` switches Korean/English; the independent `user://ashen_oath_language.cfg` preference never rewrites a campaign. A renamed OFL Noto Korean subset supplies offline glyphs. The first untouched battle of a first journey receives a dismissible guide, including after quit/resume; dismissal sets the optional `first_battle_coach_seen` run field without consuming an action. Defend shows exact capped HP and Focus recovery as well as incoming mitigation.
 
 ## Boss counterplay (checkpoint 9)
 

@@ -34,23 +34,36 @@ var last_error: String = ""
 var _milestone: bool = false
 var _settled: bool = true
 
+# Every version-2 file contains BOTH the vault and its exact journey. A later
+# UI save is redundant for settlement/purchase/new-cycle durability, not part
+# of the transaction. Status is separate from command acceptance/last_error.
+const DEFAULT_META_PATH: String = "user://ashen_oath_meta.json"
+const DEFAULT_RESUME_PATH: String = "user://ashen_oath_journey.save"
+const MAX_SAVE_BYTES: int = 4194304
+var save_status: String = "idle"
+var save_message: String = ""
+var recovery_status: String = "none"
+var recovery_message: String = ""
+var _save_revision: int = 0
+var _resume_path: String = DEFAULT_RESUME_PATH
+var _unrestored_journey: Dictionary = {}
+
 
 func _init() -> void:
 	load_meta()
 
 
 func new_run(seed_value: int = 0) -> bool:
-	if not _settled and not run.is_empty():
+	if (not _settled and not run.is_empty()) or (run.is_empty() and not _unrestored_journey.is_empty() and not bool(_unrestored_journey.settled)):
 		# Abandoning is not a defeat: do not turn repeatable opening shrines into
 		# free permanent growth. Only an actual defeat or victory banks earnings.
 		meta.runs = int(meta.runs) + 1
 		_settled = true
-		if persist_meta:
-			save_meta()
 	var actual_seed: int = seed_value
 	if actual_seed == 0:
 		actual_seed = int(Time.get_unix_time_from_system())
 	rng.seed = actual_seed
+	_unrestored_journey.clear()
 	run = {"seed": actual_seed, "node": 0, "stage": 0, "gold": 30, "karma": 0, "essence": 0, "relics": [], "bosses_defeated": 0, "battles_won": 0, "path": []}
 	_settled = false
 	_milestone = false
@@ -65,6 +78,8 @@ func new_run(seed_value: int = 0) -> bool:
 	_make_campaign()
 	_note("The oath is sworn. Nine crossings stand between you and the last sun.")
 	_open_map()
+	if persist_meta:
+		save_meta()
 	return true
 
 
@@ -696,7 +711,7 @@ func upgrade_cost(key: String) -> int:
 
 
 func buy_upgrade(key: String) -> bool:
-	if phase not in ["title", "victory", "defeat"]:
+	if phase not in ["title", "victory", "defeat"] or (run.is_empty() and not _unrestored_journey.is_empty() and not bool(_unrestored_journey.settled)):
 		return _reject("Permanent upgrades are available between runs.")
 	var cost: int = upgrade_cost(key)
 	if cost < 0 or int(meta.upgrades[key]) >= 5:
@@ -713,31 +728,37 @@ func buy_upgrade(key: String) -> bool:
 
 
 func save_meta() -> bool:
-	var file: FileAccess = FileAccess.open(meta_path, FileAccess.WRITE)
-	if file == null:
-		return _reject("The ember vault could not be saved.")
-	file.store_string(JSON.stringify({"version": 1, "meta": meta}))
-	file.close()
-	return true
+	return _save_checkpoint(meta_path)
 
 
 func load_meta() -> bool:
-	if not FileAccess.file_exists(meta_path):
+	var records: Array[Dictionary] = _records_at(meta_path)
+	# The default pair is one profile. Explicit custom vaults remain isolated.
+	if meta_path == DEFAULT_META_PATH or _resume_path != DEFAULT_RESUME_PATH:
+		records.append_array(_records_at(_resume_path))
+	var record: Dictionary = _latest_record(records)
+	if record.is_empty():
+		if _has_save_file(meta_path):
+			_recovery("corrupt", "The ember vault could not be read. No saved progress was overwritten.")
 		return false
-	var file: FileAccess = FileAccess.open(meta_path, FileAccess.READ)
-	if file == null:
+	if _revision_conflict(records, int(record.revision)):
+		_recovery("conflict", "Two saves disagree at the same checkpoint. Automatic recovery stopped; no save files were changed.")
 		return false
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not parsed is Dictionary or not parsed.get("meta", null) is Dictionary:
-		return false
-	var saved: Dictionary = parsed.meta
-	meta.essence = maxi(0, int(saved.get("essence", 0)))
-	meta.runs = maxi(0, int(saved.get("runs", 0)))
-	meta.wins = maxi(0, int(saved.get("wins", 0)))
-	var upgrades: Dictionary = saved.get("upgrades", {}) if saved.get("upgrades", {}) is Dictionary else {}
-	for key: String in UPGRADE_COSTS:
-		meta.upgrades[key] = clampi(int(upgrades.get(key, 0)), 0, 5)
+	if int(record.version) == 1:
+		var vault: Dictionary = _latest_record(_records_at(meta_path))
+		var journey: Dictionary = _latest_record(_records_at(_resume_path)) if meta_path == DEFAULT_META_PATH or _resume_path != DEFAULT_RESUME_PATH else {}
+		if not journey.is_empty() and not journey.journey.is_empty():
+			var relation: int = _legacy_relation(vault.meta, journey.meta) if not vault.is_empty() else -1
+			if relation in [0, -1]:
+				record = journey
+			elif relation == 1 and bool(journey.journey.settled):
+				record = journey.duplicate(true)
+				record.meta = vault.meta.duplicate(true)
+				record.journey.meta = vault.meta.duplicate(true)
+	meta = record.meta.duplicate(true)
+	_unrestored_journey = record.journey.duplicate(true)
+	_save_revision = int(record.revision)
+	_report_recovered_file(record, records)
 	return true
 
 
@@ -756,60 +777,477 @@ func _note(message: String) -> void:
 	if log.size() > 120:
 		log.pop_front()
 
-func save_resume(path: String = "user://ashen_oath_journey.save") -> bool:
+func save_resume(path: String = DEFAULT_RESUME_PATH) -> bool:
 	if run.is_empty():
 		return false
-	var snapshot: Dictionary=describe()
-	snapshot["save_version"]=1
-	snapshot["rng_seed"]=str(rng.seed)
-	snapshot["rng_state"]=str(rng.state)
-	snapshot["milestone"]=_milestone
-	snapshot["settled"]=_settled
-	var file: FileAccess=FileAccess.open(path+".tmp",FileAccess.WRITE)
-	if file==null:
-		return false
-	file.store_var(snapshot,false)
-	file.close()
-	return DirAccess.rename_absolute(ProjectSettings.globalize_path(path+".tmp"),ProjectSettings.globalize_path(path))==OK
+	_resume_path = path
+	return _save_checkpoint(path)
 
-func load_resume(path: String = "user://ashen_oath_journey.save") -> bool:
-	if not FileAccess.file_exists(path):
+
+func load_resume(path: String = DEFAULT_RESUME_PATH) -> bool:
+	# An explicit missing snapshot is not a request to resume another file.
+	if path != DEFAULT_RESUME_PATH and not _has_save_file(path):
 		return false
-	var file: FileAccess=FileAccess.open(path,FileAccess.READ)
-	if file==null:
+	_resume_path = path
+	var records: Array[Dictionary] = _records_at(meta_path)
+	records.append_array(_records_at(path))
+	var newest: Dictionary = _latest_record(records)
+	if newest.is_empty():
+		if _has_save_file(path):
+			_recovery("corrupt", "The saved journey is damaged and could not be resumed. The vault was kept.")
 		return false
-	var value: Variant=file.get_var(false)
+	if int(newest.version) == 2:
+		# The entire latest transaction wins, including a smaller post-purchase
+		# balance or an empty journey. Never merge/max individual currencies.
+		if _revision_conflict(records, int(newest.revision)):
+			_recovery("conflict", "Two saves disagree at the same checkpoint. Automatic recovery stopped; no save files were changed.")
+			return false
+		meta = newest.meta.duplicate(true)
+		_save_revision = int(newest.revision)
+		_report_recovered_file(newest, records)
+		if newest.journey.is_empty():
+			_clear_journey()
+			return false
+		_restore_journey(newest.journey)
+		return true
+	# Version 1 had no transaction number. Runs/wins and upgrade ranks are
+	# monotonic evidence; Ash is NOT (purchases spend it). A newer standalone
+	# vault cannot safely resume an older unfinished run: it may be settled or
+	# abandoned already. Keep its balance and retire that stale snapshot.
+	var vault: Dictionary = _latest_record(_records_at(meta_path))
+	var journey: Dictionary = _latest_record(_records_at(path))
+	if journey.is_empty() or journey.journey.is_empty():
+		if _has_save_file(path):
+			_recovery("corrupt", "The saved journey is damaged and could not be resumed. The vault was kept.")
+		return false
+	var snapshot: Dictionary = journey.journey.duplicate(true)
+	if not vault.is_empty():
+		var relation: int = _legacy_relation(vault.meta, journey.meta)
+		if relation == 2 or (relation == 1 and not bool(snapshot.settled)):
+			meta = vault.meta.duplicate(true)
+			_clear_journey()
+			_recovery("legacy_reconciled", "Recovered the newer ember vault. An older or conflicting journey was retired to prevent banking it twice.")
+			return false
+		if relation == 1:
+			snapshot.meta = vault.meta.duplicate(true)
+			_recovery("legacy_reconciled", "Recovered the newer ember vault, including its purchased upgrades.")
+		elif relation == -1:
+			_recovery("legacy_reconciled", "Recovered the newer journey and its matching ember vault.")
+	_restore_journey(snapshot)
+	_report_recovered_file(journey, records)
+	return true
+
+
+func clear_recovery_notice() -> void:
+	recovery_status = "none"
+	recovery_message = ""
+
+func retry_save() -> bool:
+	# Repair both copies from one coherent state after a transient I/O failure.
+	# Revision/conflict guards still apply; this is never a force overwrite.
+	if not _save_checkpoint(meta_path): return false
+	return true if _resume_path == meta_path else _save_checkpoint(_resume_path)
+
+
+func _recovery(status: String, message: String) -> void:
+	recovery_status = status
+	recovery_message = message
+
+
+func _save_failed(message: String) -> bool:
+	save_status = "error"
+	save_message = message + " Changes are still in memory; saving must succeed before closing."
+	return false
+
+
+func _journey_snapshot() -> Dictionary:
+	if run.is_empty():
+		# load_meta remains profile-only. Saving that profile must not silently
+		# erase the coherent journey it has not restored into live state yet.
+		var pending: Dictionary = _unrestored_journey.duplicate(true)
+		if not pending.is_empty():
+			pending.meta = meta.duplicate(true)
+		return pending
+	var snapshot: Dictionary = describe()
+	snapshot["save_version"] = 1
+	snapshot["rng_seed"] = str(rng.seed)
+	snapshot["rng_state"] = str(rng.state)
+	snapshot["milestone"] = _milestone
+	snapshot["settled"] = _settled
+	return snapshot
+
+
+func _save_checkpoint(path: String) -> bool:
+	var records: Array[Dictionary] = _records_at(meta_path)
+	if _resume_path != meta_path:
+		records.append_array(_records_at(_resume_path))
+	var revision: int = _save_revision
+	for record: Dictionary in records:
+		revision = maxi(revision, int(record.revision))
+	if _revision_conflict(records, revision):
+		_recovery("conflict", "Two saves disagree at the same checkpoint. Automatic recovery stopped; no save files were changed.")
+		return _save_failed("The save data failed validation.")
+	if revision > _save_revision:
+		_recovery("conflict", "A newer checkpoint was saved by another window. Reload the saved journey before retrying.")
+		return _save_failed("A newer checkpoint exists. Reload it before retrying.")
+	var transaction: Dictionary = {"version": 2, "revision": revision + 1, "meta": meta.duplicate(true), "journey": _journey_snapshot()}
+	if not _valid_transaction(transaction):
+		return _save_failed("The save data failed validation.")
+	var bytes: PackedByteArray = var_to_bytes(transaction)
+	var envelope: Dictionary = {"version": 2, "payload": Marshalls.raw_to_base64(bytes), "sha256": _digest(bytes)}
+	var encoded: PackedByteArray = JSON.stringify(envelope).to_utf8_buffer()
+	if not _write_checked(path + ".tmp", encoded):
+		return _save_failed("The checkpoint could not be written.")
+	# Copy rather than move the previous good primary: an interrupted backup
+	# rotation never removes the only committed checkpoint. Do not replace a
+	# good backup with a corrupt primary. Uncommitted .tmp files are ignored.
+	if not _read_record(path).is_empty():
+		var previous: PackedByteArray = FileAccess.get_file_as_bytes(path)
+		if not _write_checked(path + ".bak.tmp", previous) or not _replace_file(path + ".bak.tmp", path + ".bak"):
+			return _save_failed("The previous checkpoint could not be protected.")
+	if not _replace_file(path + ".tmp", path):
+		return _save_failed("The checkpoint could not be committed.")
+	_save_revision = revision + 1
+	save_status = "saved"
+	save_message = "Journey and ember vault saved together."
+	return true
+
+
+func _write_checked(path: String, bytes: PackedByteArray) -> bool:
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_buffer(bytes)
+	file.flush()
+	var error: Error = file.get_error()
 	file.close()
-	if not value is Dictionary:
-		return false
-	var s: Dictionary=value
-	if s.get("save_version",0)!=1 or s.get("phase","") not in ["map","battle","reward","event","camp","relic","victory","defeat"]:
-		return false
-	for key in ["heroes","parts","campaign","choices","rewards","log"]:
-		if not s.get(key,null) is Array:
-			return false
-	for key in ["boss","intent","event","run","meta"]:
-		if not s.get(key,null) is Dictionary:
-			return false
-	if s.heroes.size()!=3 or s.campaign.size()!=9 or not s.meta.get("upgrades",null) is Dictionary:
-		return false
-	phase=s.phase
-	title=s.get("title","Ashen Oath")
+	return error == OK and FileAccess.get_file_as_bytes(path) == bytes and not _read_record(path).is_empty()
+
+
+func _replace_file(source: String, destination: String) -> bool:
+	return DirAccess.rename_absolute(ProjectSettings.globalize_path(source), ProjectSettings.globalize_path(destination)) == OK
+
+
+func _digest(bytes: PackedByteArray) -> String:
+	var hashing: HashingContext = HashingContext.new()
+	hashing.start(HashingContext.HASH_SHA256)
+	hashing.update(bytes)
+	return hashing.finish().hex_encode()
+
+
+func _has_save_file(path: String) -> bool:
+	return FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
+
+
+func _records_at(path: String) -> Array[Dictionary]:
+	var records: Array[Dictionary] = []
+	for source: String in [path, path + ".bak"]:
+		var record: Dictionary = _read_record(source)
+		if not record.is_empty():
+			record["source"] = source
+			record["backup"] = source != path
+			record["damaged_primary"] = source != path and _read_record(path).is_empty()
+			records.append(record)
+	return records
+
+
+func _latest_record(records: Array[Dictionary]) -> Dictionary:
+	var latest: Dictionary = {}
+	for record: Dictionary in records:
+		if latest.is_empty() or int(record.version) > int(latest.version) or (int(record.version) == int(latest.version) and int(record.revision) > int(latest.revision)):
+			latest = record
+	return latest
+
+
+func _revision_conflict(records: Array[Dictionary], revision: int) -> bool:
+	var digest: String = ""
+	for record: Dictionary in records:
+		if int(record.version) != 2 or int(record.revision) != revision:
+			continue
+		if not digest.is_empty() and digest != record.digest:
+			return true
+		digest = record.digest
+	return false
+
+
+func _report_recovered_file(selected: Dictionary, records: Array[Dictionary]) -> void:
+	var recovered: bool = bool(selected.get("backup", false))
+	for record: Dictionary in records:
+		recovered = recovered or bool(record.get("damaged_primary", false))
+	for path: String in [meta_path, _resume_path]:
+		recovered = recovered or (FileAccess.file_exists(path) and _read_record(path).is_empty())
+	if recovered:
+		_recovery("recovered", "A damaged or interrupted save was recovered from a complete checkpoint. Some recent actions may need to be repeated.")
+
+
+func _read_record(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {}
+	var length: int = file.get_length()
+	if length < 4 or length > MAX_SAVE_BYTES:
+		file.close()
+		return {}
+	var bytes: PackedByteArray = file.get_buffer(length)
+	file.close()
+	if bytes.size() != length:
+		return {}
+	if bytes[0] == 123: # JSON object: legacy vault or checksummed v2 bundle.
+		var json: JSON = JSON.new()
+		if json.parse(bytes.get_string_from_utf8()) != OK:
+			return {}
+		var parsed: Variant = json.data
+		if not parsed is Dictionary:
+			return {}
+		if parsed.get("version", 1) == 2:
+			if not parsed.get("payload", null) is String or not parsed.get("sha256", null) is String:
+				return {}
+			var payload: PackedByteArray = Marshalls.base64_to_raw(parsed.payload)
+			if payload.is_empty() or _digest(payload) != parsed.sha256:
+				return {}
+			var transaction: Variant = bytes_to_var(payload)
+			if not _valid_transaction(transaction):
+				return {}
+			transaction["digest"] = parsed.sha256
+			return transaction
+		if parsed.get("version", 1) == 1 and _valid_meta(parsed.get("meta", null)):
+			return {"version": 1, "revision": 0, "meta": _normalized_meta(parsed.meta), "journey": {}, "digest": ""}
+		return {}
+	# FileAccess.store_var's length-prefixed, object-free version-1 format.
+	if bytes.decode_u32(0) != bytes.size() - 4:
+		return {}
+	var snapshot: Variant = bytes_to_var(bytes.slice(4))
+	if not _valid_journey(snapshot):
+		return {}
+	return {"version": 1, "revision": 0, "meta": snapshot.meta, "journey": snapshot, "digest": ""}
+
+
+func _legacy_relation(vault: Dictionary, journey_meta: Dictionary) -> int:
+	if vault == journey_meta:
+		return 0
+	var ahead: bool = false
+	var behind: bool = false
+	for key: String in ["runs", "wins"]:
+		ahead = ahead or int(vault[key]) > int(journey_meta[key])
+		behind = behind or int(vault[key]) < int(journey_meta[key])
+	for key: String in UPGRADE_COSTS:
+		ahead = ahead or int(vault.upgrades[key]) > int(journey_meta.upgrades[key])
+		behind = behind or int(vault.upgrades[key]) < int(journey_meta.upgrades[key])
+	if ahead and not behind:
+		return 1
+	if behind and not ahead:
+		return -1
+	return 2 # No trustworthy ordering, including a balance-only discrepancy.
+
+
+func _restore_journey(snapshot: Dictionary) -> void:
+	var s: Dictionary = snapshot.duplicate(true)
+	_unrestored_journey.clear()
+	phase = s.phase
+	title = s.title
 	heroes.assign(s.heroes)
 	parts.assign(s.parts)
 	campaign.assign(s.campaign)
 	choices.assign(s.choices)
 	rewards.assign(s.rewards)
 	log.assign(s.log)
-	boss=s.boss
-	intent=s.intent
-	event=s.event
-	run=s.run
-	meta=s.meta
-	round_number=int(s.get("round_number",1))
-	_milestone=bool(s.get("milestone",false))
-	_settled=bool(s.get("settled",false))
-	rng.seed=int(s.get("rng_seed","0"))
-	rng.state=int(s.get("rng_state","0"))
-	last_error=""
+	boss = s.boss
+	intent = s.intent
+	event = s.event
+	run = s.run
+	meta = s.meta
+	round_number = int(s.round_number)
+	_milestone = bool(s.milestone)
+	_settled = bool(s.settled)
+	rng.seed = int(s.rng_seed)
+	rng.state = int(s.rng_state)
+	last_error = ""
+
+
+func _clear_journey() -> void:
+	_unrestored_journey.clear()
+	phase = "title"
+	title = "Ashen Oath"
+	heroes.clear()
+	parts.clear()
+	campaign.clear()
+	choices.clear()
+	rewards.clear()
+	log.clear()
+	boss.clear()
+	intent.clear()
+	event.clear()
+	run.clear()
+	round_number = 0
+	_milestone = false
+	_settled = true
+	last_error = ""
+
+
+func _whole(value: Variant, low: int = 0, high: int = 9223372036854775807) -> bool:
+	if value is int:
+		return value >= low and value <= high
+	return value is float and is_finite(value) and value == floor(value) and value >= low and value <= high
+
+
+func _normalized_meta(value: Dictionary) -> Dictionary:
+	var normalized: Dictionary = {"essence": int(value.essence), "runs": int(value.runs), "wins": int(value.wins), "upgrades": {}}
+	for key: String in UPGRADE_COSTS:
+		normalized.upgrades[key] = int(value.upgrades[key])
+	return normalized
+
+
+func _valid_meta(value: Variant) -> bool:
+	if not value is Dictionary or not value.get("upgrades", null) is Dictionary:
+		return false
+	for key: String in ["essence", "runs", "wins"]:
+		if not _whole(value.get(key, null)):
+			return false
+	if int(value.wins) > int(value.runs):
+		return false
+	for key: String in UPGRADE_COSTS:
+		if not _whole(value.upgrades.get(key, null), 0, 5):
+			return false
+	return true
+
+
+func _valid_transaction(value: Variant) -> bool:
+	if not value is Dictionary or value.get("version", 0) != 2 or not _whole(value.get("revision", null), 1):
+		return false
+	if not _valid_meta(value.get("meta", null)) or not value.get("journey", null) is Dictionary:
+		return false
+	return value.journey.is_empty() or (_valid_journey(value.journey) and value.journey.meta == value.meta)
+
+
+func _named(value: Variant) -> bool:
+	return value is Dictionary and value.get("name", null) is String
+
+
+func _valid_option(value: Variant) -> bool:
+	return _named(value) and value.get("description", null) is String and value.get("kind", "") in ["battle", "boss", "camp", "event", "relic"] and _whole(value.get("tier", null), 1, 3)
+
+
+func _valid_attack(value: Variant) -> bool:
+	if not _named(value) or not _whole(value.get("part", null), 0, 2) or not _whole(value.get("damage", null)) or not value.get("targets", null) is Array:
+		return false
+	if value.targets.is_empty() or value.targets.size() > 3:
+		return false
+	for target: Variant in value.targets:
+		if not _whole(target, 0, 2):
+			return false
+	return not value.has("wardable") or value.wardable is bool
+
+
+func _valid_journey(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	var s: Dictionary = value
+	if s.get("save_version", 0) != 1 or s.get("phase", "") not in ["map", "battle", "reward", "event", "camp", "relic", "victory", "defeat"]:
+		return false
+	if not s.get("title", null) is String or not _valid_meta(s.get("meta", null)):
+		return false
+	for key: String in ["heroes", "parts", "campaign", "choices", "rewards", "log"]:
+		if not s.get(key, null) is Array:
+			return false
+	for key: String in ["boss", "intent", "event", "run"]:
+		if not s.get(key, null) is Dictionary:
+			return false
+	if s.heroes.size() != 3 or s.campaign.size() != 9 or s.log.size() > 120:
+		return false
+	if not s.get("settled", null) is bool or not s.get("milestone", null) is bool or not _whole(s.get("round_number", null)):
+		return false
+	if bool(s.settled) != (s.phase in ["victory", "defeat"]):
+		return false
+	for key: String in ["rng_seed", "rng_state"]:
+		if not s.get(key, null) is String or not s[key].is_valid_int() or str(int(s[key])) != s[key]:
+			return false
+	for line: Variant in s.log:
+		if not line is String:
+			return false
+	for hero: Variant in s.heroes:
+		if not _named(hero) or not hero.get("role", null) is String or not hero.get("skills", null) is Array or hero.skills.size() != 4:
+			return false
+		for key: String in ["hp", "max_hp", "mp", "max_mp"]:
+			if not _whole(hero.get(key, null)):
+				return false
+		if int(hero.max_hp) <= 0 or hero.hp > hero.max_hp or hero.mp > hero.max_mp or not hero.get("acted", null) is bool or not hero.get("guard", null) is bool:
+			return false
+		for skill: Variant in hero.skills:
+			if not _named(skill) or not skill.get("description", null) is String or skill.get("type", "") not in ["slash", "blunt", "pierce", "arcane", "guard"]:
+				return false
+			for key: String in ["power", "cost", "break_power"]:
+				if not _whole(skill.get(key, null)):
+					return false
+	for index: int in range(9):
+		var node: Variant = s.campaign[index]
+		if not _named(node) or node.get("index", -1) != index or not node.get("choices", null) is Array or node.choices.size() < 1 or node.choices.size() > 2:
+			return false
+		if not _whole(node.get("tier", null), 1, 3) or not node.get("completed", null) is bool or not node.get("milestone", null) is bool or not _whole(node.get("selected", null), -1, node.choices.size() - 1):
+			return false
+		for choice: Variant in node.choices:
+			if not _valid_option(choice):
+				return false
+	for choice: Variant in s.choices:
+		if not _valid_option(choice):
+			return false
+	for key: String in ["seed", "node", "stage", "gold", "karma", "essence", "bosses_defeated", "battles_won"]:
+		if not _whole(s.run.get(key, null), (-9223372036854775807 - 1) if key in ["seed", "karma"] else 0):
+			return false
+	if s.run.node != s.run.stage or not _whole(s.run.node, 0, 9) or (s.phase != "victory" and int(s.run.node) == 9):
+		return false
+	if not s.run.get("relics", null) is Array or not s.run.get("path", null) is Array or s.run.relics.size() > RELICS.size() or s.run.path.size() > 9:
+		return false
+	if s.run.has("damage_bonus") and not _whole(s.run.damage_bonus):
+		return false
+	var relic_ids: Array[String] = []
+	for relic: Variant in s.run.relics:
+		if not _named(relic) or not relic.get("id", null) is String or not relic.get("description", null) is String or relic.id in relic_ids:
+			return false
+		relic_ids.append(relic.id)
+	for step: Variant in s.run.path:
+		if not _named(step) or not _whole(step.get("node", null), 0, 8) or step.get("kind", "") not in ["battle", "boss", "camp", "event", "relic"]:
+			return false
+	if not s.parts.is_empty() or not s.boss.is_empty():
+		if s.parts.size() != 3 or not _named(s.boss):
+			return false
+		for key: String in ["hp", "max_hp", "tier"]:
+			if not _whole(s.boss.get(key, null)):
+				return false
+		if int(s.boss.max_hp) < 1 or s.boss.hp > s.boss.max_hp or not _whole(s.boss.tier, 1, 3) or not s.boss.get("milestone", null) is bool or not s.boss.get("title", null) is String:
+			return false
+		for part: Variant in s.parts:
+			if not _named(part) or part.get("level", "") not in ["LOW", "MID", "HIGH"] or not part.get("move", null) is String or part.get("weakness", "") not in ["slash", "blunt", "pierce", "arcane"]:
+				return false
+			for key: String in ["hp", "max_hp", "shield", "max_shield", "armor"]:
+				if not _whole(part.get(key, null)):
+					return false
+			if int(part.max_hp) < 1 or part.hp > part.max_hp or part.shield > part.max_shield or not part.get("broken", null) is bool or not part.get("severed", null) is bool:
+				return false
+	if not s.intent.is_empty():
+		if s.parts.size() != 3 or not _valid_attack(s.intent):
+			return false
+		if s.intent.has("secondary") and not _valid_attack(s.intent.secondary):
+			return false
+		if s.intent.has("rhythm"):
+			if not _named(s.intent.rhythm) or not s.intent.rhythm.get("id", null) is String or not s.intent.rhythm.get("description", null) is String or not s.intent.rhythm.get("next", null) is String:
+				return false
+	if s.phase == "battle" and (s.parts.size() != 3 or s.intent.is_empty() or int(s.round_number) < 1):
+		return false
+	if s.phase == "map" and (s.choices.is_empty() or s.choices != s.campaign[int(s.run.node)].choices):
+		return false
+	for reward: Variant in s.rewards:
+		if not _named(reward) or not reward.get("description", null) is String or reward.get("kind", "") not in ["heal", "gold", "relic"]:
+			return false
+	if s.phase == "reward" and s.rewards.size() != 3:
+		return false
+	if not s.event.is_empty():
+		if not _named(s.event) or not s.event.get("description", null) is String or not s.event.get("options", null) is Array or s.event.options.size() < 1 or s.event.options.size() > 3:
+			return false
+		for option: Variant in s.event.options:
+			if not _named(option) or not option.get("description", null) is String or option.get("effect", "") not in ["rest", "sharpen", "relic", "offering", "shelter", "sacrifice", "seize"] or not _whole(option.get("cost", 0)):
+				return false
+	if s.phase in ["camp", "event", "relic"] and s.event.is_empty():
+		return false
 	return true

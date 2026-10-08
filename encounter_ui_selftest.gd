@@ -1,10 +1,13 @@
 extends SceneTree
+const Localization = preload("res://localization.gd")
 ## Scene-tree layout/interaction checks. Native screenshots are separate evidence.
 var checks: int=0
 func check(value: bool, context: String) -> void:
 	checks+=1
 	assert(value,context)
 func _initialize() -> void:
+	Localization.set_language("en")
+	Localization.save_preferences()
 	call_deferred("run_tests")
 func run_tests() -> void:
 	var scene=load("res://main.tscn").instantiate()

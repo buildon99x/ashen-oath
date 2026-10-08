@@ -13,12 +13,18 @@ Mouse: all menus, hero/part/skill selection
 Up / Down: select an enemy part
 Q / W / E: skill; R: guard; Space: end round
 H: guide; M: mute sound; Escape: menu / return
+L: Korean / English (saved separately); B: build / relics; V: character studio
 
 Combat: match an attack to a part's weakness to break its armor.
 Destroy the part to stop its attacks. Every living hero acts once each round.
 Read OMEN before ending the round. Route choices, relics, and rest matter.
 Permanent Ash upgrades are saved automatically in your user data directory.
-The current journey saves after every choice. Resume it from the title screen.
+The current journey and Ash vault save together after each accepted choice.
+Resume from the title screen. A save-error warning means recent actions may
+only be in memory: use Retry Save before closing. Backup recovery may require
+repeating recent actions. Do not run multiple writable copies of one profile.
+Korean is the default language; L switches to English. The bundled Korean
+font license is in ASHEN_KOREAN_OFL.txt.
 
 Unsigned Windows builds may trigger SmartScreen. This build is not code-signed.
 The Windows export was generated and inspected on Linux; Windows-native

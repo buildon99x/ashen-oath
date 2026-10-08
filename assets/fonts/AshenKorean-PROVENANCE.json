@@ -1,0 +1,71 @@
+{
+  "source_collection": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+  "upstream": "https://github.com/notofonts/noto-cjk",
+  "verified_collection_faces": [
+    [
+      0,
+      "Noto Sans CJK JP"
+    ],
+    [
+      1,
+      "Noto Sans CJK KR"
+    ],
+    [
+      2,
+      "Noto Sans CJK SC"
+    ],
+    [
+      3,
+      "Noto Sans CJK TC"
+    ],
+    [
+      4,
+      "Noto Sans CJK HK"
+    ],
+    [
+      5,
+      "Noto Sans Mono CJK JP"
+    ],
+    [
+      6,
+      "Noto Sans Mono CJK KR"
+    ],
+    [
+      7,
+      "Noto Sans Mono CJK SC"
+    ],
+    [
+      8,
+      "Noto Sans Mono CJK TC"
+    ],
+    [
+      9,
+      "Noto Sans Mono CJK HK"
+    ]
+  ],
+  "selected_face": 1,
+  "source_sha256": "b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a",
+  "output_sha256": "7e8e9b3c92158a365771f85928834e73f10012f5fee84ab8801b6213f62728da",
+  "original_version": "Version 2.004;hotconv 1.0.118;makeotfexe 2.5.65603",
+  "output_bytes": 2021824,
+  "covered_codepoints": 12813,
+  "all_11172_modern_hangul": true,
+  "requested_ranges": [
+    "U+0020–U+024F",
+    "U+0300–U+036F",
+    "U+1100–U+11FF",
+    "U+2000–U+206F",
+    "U+2070–U+209F",
+    "U+20A0–U+20CF",
+    "U+2100–U+27BF",
+    "U+3000–U+303F",
+    "U+3130–U+318F",
+    "U+A960–U+A97F",
+    "U+AC00–U+D7FF",
+    "U+FF00–U+FFEF"
+  ],
+  "coverage_rule": "All glyphs available in the source within the listed ranges, plus U+FFFD. Full 11,172 modern Hangul syllables verified; modern and archaic Jamo retained where available. Not a complete Unicode/CJK ideograph font.",
+  "original_font_copyright": "© 2014-2021 Adobe (http://www.adobe.com/).",
+  "distribution_copyright": "2010-2012 Google Corporation",
+  "jamo_coverage": "All assigned U+1100–U+11FF, U+3131–U+318E, U+A960–U+A97C, U+D7B0–U+D7C6 and U+D7CB–U+D7FB glyphs retained. U+D7C7–U+D7CA are unassigned."
+}

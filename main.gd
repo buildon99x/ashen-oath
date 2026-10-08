@@ -1,5 +1,6 @@
 extends Node2D
 
+const Localization = preload("res://localization.gd")
 const Model = preload("res://model.gd")
 const ActorArt = preload("res://generated_actor_art.gd")
 const MonsterArt = preload("res://generated_monster.gd")
@@ -9,6 +10,7 @@ const TEAL = Color("78c9be")
 const INK = Color("0e171e")
 const PALE = Color("e4e5db")
 const FINISHER_DURATION: float = 1.15
+const LANGUAGE_RECT = Rect2(830,25,150,42)
 const FINISHER_SKIP_RECT = Rect2(1080, 786, 300, 64)
 const REGION_NAMES: Array[String] = ["CINDER FOREST","DROWNED RELIQUARY","PALE THRONE"]
 var model = Model.new()
@@ -54,11 +56,18 @@ var finisher_awards: String = ""
 var combat_feedback: Node2D
 var audio: AudioStreamPlayer
 var font: Font = ThemeDB.fallback_font
+var coach_open: bool = false
+var coach_eligible: bool = false
+var recovery_notice: String = ""
+var recovery_notice_open: bool = false
+var save_notice: String = ""
+var save_error_open: bool = false
+var dismissed_save_error: String = ""
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(INK)
-	if ResourceLoader.exists("res://assets/fonts/PixelifySans.ttf"):
-		font=load("res://assets/fonts/PixelifySans.ttf")
+	Localization.load_preferences()
+	apply_language_theme()
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 	generated_monster=MonsterArt.new()
 	add_child(generated_monster)
@@ -66,6 +75,11 @@ func _ready() -> void:
 		hero_sprites.append(load("res://assets/hero_%d.png" % i))
 	model.load_meta()
 	model.load_resume()
+	# A first-time player may quit on the map before finding any battle.
+	# Eligibility follows the durable journey, not only this process's Begin click.
+	coach_eligible = not model.run.is_empty() and int(model.meta.get("runs",0)) == 0
+	recovery_notice = model.recovery_message
+	recovery_notice_open = not recovery_notice.is_empty()
 	restore_battle_selection()
 	for i in range(3):
 		var actor: Node2D=HeroAnimation.new()
@@ -86,9 +100,10 @@ func _ready() -> void:
 		if ResourceLoader.exists(path): vignettes[key]=load(path)
 	ui = Control.new()
 	add_child(ui)
+	apply_language_theme()
 	audio = AudioStreamPlayer.new()
 	add_child(audio)
-	refresh()
+	refresh(false)
 
 func _process(delta: float) -> void:
 	clock_time += delta
@@ -149,6 +164,14 @@ func draw_finisher_feedback() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not finisher_active(): return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_L:
+		get_viewport().set_input_as_handled()
+		toggle_language()
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and LANGUAGE_RECT.has_point(event.position):
+		get_viewport().set_input_as_handled()
+		toggle_language()
+		return
 	# The model has already awarded this victory and saved the reward choice.
 	# Consume the skip event before new reward controls exist, including releases.
 	get_viewport().set_input_as_handled()
@@ -164,6 +187,24 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var key: int = event.keycode
+	if key == KEY_L:
+		toggle_language()
+		get_viewport().set_input_as_handled()
+		return
+	if recovery_notice_open:
+		if key in [KEY_ESCAPE, KEY_ENTER]: dismiss_recovery_notice()
+		return
+	if save_error_open:
+		if key == KEY_ENTER: retry_save()
+		elif key == KEY_ESCAPE: dismiss_save_error()
+		return
+	if coach_open:
+		if key in [KEY_ESCAPE, KEY_ENTER]: dismiss_first_battle_coach()
+		elif key == KEY_H:
+			dismiss_first_battle_coach()
+			help_open = true
+			refresh()
+		return
 	if not confirmation.is_empty():
 		if key == KEY_ESCAPE:
 			confirmation = ""
@@ -226,7 +267,7 @@ func style(color: Color, border: Color = Color.TRANSPARENT) -> StyleBoxFlat:
 
 func label_at(text: String, pos: Vector2, size: int = 20, color: Color = PALE, width: float = 1300) -> Label:
 	var l = Label.new()
-	l.text = text
+	l.text = display_text(text)
 	l.position = pos
 	l.size = Vector2(width, 35)
 	l.add_theme_font_override("font",font)
@@ -238,7 +279,7 @@ func label_at(text: String, pos: Vector2, size: int = 20, color: Color = PALE, w
 func paragraph(text: String, pos: Vector2, width: float, size: int = 18, color: Color = PALE) -> Label:
 	var l = Label.new()
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.text = text
+	l.text = display_text(text)
 	l.position = pos
 	l.size = Vector2(width, 0)
 	l.add_theme_font_override("font",font)
@@ -247,15 +288,18 @@ func paragraph(text: String, pos: Vector2, width: float, size: int = 18, color: 
 	ui.add_child(l)
 	return l
 
-func button(text: String, rect: Rect2, action: Callable, active: bool = false, disabled: bool = false, during_finisher: bool = false) -> Button:
+func button(text: String, rect: Rect2, action: Callable, active: bool = false, disabled: bool = false, during_finisher: bool = false, text_size: int = 18) -> Button:
 	var b = Button.new()
-	b.text = wrap_button(text, rect.size.x - 34)
+	b.add_theme_font_size_override("font_size", text_size)
+	b.add_theme_font_override("font",font)
+	b.text = wrap_button(display_text(text), rect.size.x - 34, text_size)
 	b.position = rect.position
 	b.size = rect.size
+	b.set_meta("layout_rect", rect)
 	b.disabled = disabled
-	if model.phase == "battle" and not menu and not help_open and not build_open and confirmation.is_empty():
+	if model.phase == "battle" and not menu and not help_open and not build_open and confirmation.is_empty() and not coach_open and not recovery_notice_open and not save_error_open:
 		b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 18)
+	b.add_theme_font_size_override("font_size", text_size)
 	b.add_theme_font_override("font",font)
 	b.add_theme_color_override("font_color", GOLD if active else PALE)
 	b.add_theme_stylebox_override("normal", pixel_frame("gold" if active else "normal"))
@@ -263,17 +307,19 @@ func button(text: String, rect: Rect2, action: Callable, active: bool = false, d
 	b.add_theme_stylebox_override("pressed", pixel_frame("gold"))
 	b.add_theme_stylebox_override("disabled", pixel_frame("disabled"))
 	b.pressed.connect(func():
+		if during_finisher and b.is_queued_for_deletion(): return
 		if during_finisher or not finisher_active(): action.call())
 	ui.add_child(b)
+	b.size = rect.size
 	return b
 
-func wrap_button(text: String, max_width: float) -> String:
+func wrap_button(text: String, max_width: float, text_size: int = 18) -> String:
 	var lines: Array[String] = []
 	for source_line in text.split("\n"):
 		var line: String = ""
 		for word in source_line.split(" "):
 			var trial: String = line + (" " if not line.is_empty() else "") + word
-			if not line.is_empty() and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x > max_width:
+			if not line.is_empty() and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, text_size).x > max_width:
 				lines.append(line)
 				line = word
 			else:
@@ -281,15 +327,17 @@ func wrap_button(text: String, max_width: float) -> String:
 		lines.append(line)
 	return "\n".join(lines)
 
-func refresh() -> void:
-	if model.persist_meta and not model.run.is_empty():
+func refresh(save_journey: bool = true) -> void:
+	if save_journey and model.persist_meta and not model.run.is_empty():
 		model.save_resume()
+	sync_save_notices()
 	for child in ui.get_children():
 		child.queue_free()
 	label_at("A S H E N   O A T H", Vector2(38, 22), 25, GOLD)
 	label_at("THE HOLLOW CROWN", Vector2(40, 55), 12, TEAL)
 	if finisher_active():
 		show_finisher()
+		show_language_button()
 		return
 	button("V  Sprites",Rect2(990,25,120,42),func(): get_tree().change_scene_to_file("res://character_studio.tscn"))
 	button("H  Guide", Rect2(1120, 25, 120, 42), func(): help_open = not help_open; refresh())
@@ -297,19 +345,29 @@ func refresh() -> void:
 	if menu:
 		show_menu()
 	else:
-		label_at("CYCLE %d  /  ASH %d  /  GOLD %d  /  KARMA %+d" % [int(model.meta.get("runs",0))+(0 if model.phase in ["victory","defeat"] else 1), model.meta.get("essence",0), model.run.get("gold",0), model.run.get("karma",0)], Vector2(420, 32), 16, PALE)
+		label_at("CYCLE %d  /  ASH %d  /  GOLD %d  /  KARMA %+d" % [int(model.meta.get("runs",0))+(0 if model.phase in ["victory","defeat"] else 1), model.meta.get("essence",0), model.run.get("gold",0), model.run.get("karma",0)], Vector2(390, 33), 14, PALE,430)
 		match model.phase:
 			"battle": show_battle()
 			"map": show_map()
 			"reward": show_choices(model.rewards, "A MEMORY WORTH KEEPING", "Choose recovery, tribute, or a relic for this journey.", true)
 			"event", "camp", "relic": show_choices(model.event.get("options", []), model.title, model.event.get("description", "The road remembers every choice."), false)
 			"victory", "defeat": show_ending()
+	if should_show_first_battle_coach(): coach_open = true
 	if help_open:
 		show_help()
 	if build_open:
 		show_build()
 	if not confirmation.is_empty():
 		show_confirmation()
+	if coach_open:
+		show_first_battle_coach()
+	if not save_notice.is_empty() and not save_error_open:
+		button("SAVE ERROR / REVIEW",Rect2(1120,82,280,32),open_save_error,false,false,false,13)
+	if save_error_open:
+		show_save_error()
+	if recovery_notice_open:
+		show_recovery_notice()
+	show_language_button()
 
 func show_menu() -> void:
 	label_at("THE GODS LEFT THEIR CROWNS.", Vector2(70, 192), 18, TEAL)
@@ -317,12 +375,19 @@ func show_menu() -> void:
 	paragraph("Three wanderers. Nine crossings. One hollow throne.\nRead the omen. Break a defense. Sever the source of its power.", Vector2(72, 405), 620, 21)
 	button("BEGIN A NEW CYCLE", Rect2(72, 525, 330, 62), request_new_cycle, true)
 	if not model.heroes.is_empty():
-		button("RESUME CURRENT JOURNEY", Rect2(72, 601, 330, 52), func(): menu = false; refresh())
+		button("REVIEW LAST JOURNEY" if model.phase in ["victory", "defeat"] else "RESUME CURRENT JOURNEY", Rect2(72, 601, 330, 52), func(): menu = false; refresh())
 	label_at("LEGACY  /  %d ASH" % model.meta.get("essence",0), Vector2(72, 685), 19, GOLD)
 	var i: int = 0
 	for key in ["vitality", "force", "focus"]:
 		var level: int = model.meta.get("upgrades",{}).get(key,0)
-		button("%s +%d · %d ash" % [key.capitalize(), level, model.upgrade_cost(key)], Rect2(72+i*208, 729, 198, 62), upgrade.bind(key))
+		var effect: String = {"vitality": "+5 max HP", "force": "+2 damage", "focus": "+1 max Focus"}[key]
+		var cost: int = model.upgrade_cost(key)
+		var unavailable: bool = model.phase not in ["title", "victory", "defeat"] or level >= 5 or int(model.meta.get("essence",0)) < cost
+		var price: String = "MAX" if level >= 5 else "%d ash" % cost
+		var card: String = "%s %d/5 · %s\n%s / next run" % [key.capitalize(),level,price,effect]
+		var upgrade_button = button(card, Rect2(72+i*218, 729, 208, 82), upgrade.bind(key), false, unavailable, false, 15)
+		upgrade_button.add_theme_font_size_override("font_size",15)
+		upgrade_button.tooltip_text = display_text("Each rank: %s. Applies to the next new journey. Rank %d of 5." % [effect,level])
 		i += 1
 	label_at(message if not message.is_empty() else "Original tactical roguelite • mouse or keyboard • no time pressure", Vector2(72, 820), 15, Color("91a6a7"))
 
@@ -331,6 +396,8 @@ func begin_run() -> void:
 	confirmation = ""
 	build_open = false
 	model.new_run(int(Time.get_unix_time_from_system()) % 1000000)
+	coach_open = false
+	coach_eligible = int(model.meta.get("runs",0)) == 0
 	menu = false
 	selected_hero = 0
 	selected_part = 0
@@ -346,7 +413,7 @@ func request_new_cycle() -> void:
 		begin_run()
 
 func request_end_round() -> void:
-	if finisher_active(): return
+	if finisher_active() or coach_open or recovery_notice_open or save_error_open: return
 	if model.phase != "battle": return
 	if model.actions_remaining() > 0:
 		confirmation = "end_round"
@@ -360,6 +427,7 @@ func confirm_action() -> void:
 	confirmation = ""
 	if pending == "new_cycle": begin_run()
 	elif pending == "end_round": finish_round()
+	elif pending == "reload_save": reload_saved_journey()
 
 func show_confirmation() -> void:
 	var blocker = ColorRect.new()
@@ -369,6 +437,12 @@ func show_confirmation() -> void:
 	ui.add_child(blocker)
 	panel_at(Rect2(370,260,700,350))
 	var is_round: bool = confirmation == "end_round"
+	if confirmation == "reload_save":
+		label_at("RELOAD SAVED JOURNEY?",Vector2(404,293),29,GOLD,640)
+		paragraph("Reloading discards unsaved actions in this window and opens the latest valid checkpoint. Conflicting save files will not be overwritten.",Vector2(406,355),615,21)
+		button("ESC / KEEP PLAYING",Rect2(405,513,295,62),func(): confirmation=""; refresh(false),true)
+		button("ENTER / RELOAD",Rect2(718,513,314,62),confirm_action)
+		return
 	label_at("%d HEROES CAN STILL ACT" % model.actions_remaining() if is_round else "LEAVE THIS JOURNEY?",Vector2(404,293),29,GOLD,640)
 	paragraph("Ending now gives up their remaining actions and resolves the omen. You can still attack or defend first." if is_round else "Starting again replaces this journey. Your %d unbanked ash will be lost. Your existing legacy upgrades and banked ash stay with you." % model.run.get("essence",0),Vector2(406,355),615,22)
 	button("ESC / KEEP PLAYING",Rect2(405,513,295,62),func(): confirmation=""; refresh(),true)
@@ -392,15 +466,15 @@ func show_battle() -> void:
 		var p: Dictionary = model.parts[i]
 		var status: String = "SEVERED" if p.get("severed",false) else ("BROKEN" if p.get("broken",false) else "SHIELD %d" % p.get("shield",0))
 		var t: String = "%s · %s\n%s  |  HP %d/%d\nWeak: %s" % [str(p.get("level","")), p.get("name",""), status, p.get("hp",0), p.get("max_hp",0), str(p.get("weakness",""))]
-		var b = button(t, Rect2(1080, 183+i*119, 320, 104), select_part.bind(i), i == selected_part, p.get("severed",false))
+		var b = button(t, Rect2(1080, 183+i*119, 320, 104), select_part.bind(i), i == selected_part, p.get("severed",false), false, 17)
 		b.add_theme_font_size_override("font_size", 17)
-		b.tooltip_text = "Severing removes %s from future rounds." % p.get("move","")
+		b.tooltip_text = display_text("Severing removes %s from future rounds." % p.get("move",""))
 		for attack_index in range(threat.attacks.size()):
 			var attack: Dictionary = threat.attacks[attack_index]
 			if i == int(attack.part) and not p.severed:
 				label_at(str(attack_index+1),Vector2(1088,185+i*119),16,omen_color,20)
-				b.tooltip_text = "OMEN %d / %s\n%s" % [attack_index+1,attack.name,attack.counterplay]
-	var build_button = button("B / VIEW BUILD",Rect2(1080,538,320,36),func(): build_open=true; refresh())
+				b.tooltip_text = display_text("OMEN %d / %s\n%s" % [attack_index+1,attack.name,attack.counterplay])
+	var build_button = button("B / VIEW BUILD",Rect2(1080,538,320,36),func(): build_open=true; refresh(),false,false,false,14)
 	build_button.add_theme_font_size_override("font_size",14)
 	for i in range(model.heroes.size()):
 		var h: Dictionary = model.heroes[i]
@@ -430,11 +504,15 @@ func show_battle() -> void:
 		var keys: Array = ["Q", "W", "E", "R"]
 		var prediction: Dictionary = model.preview_action(selected_hero,i,selected_part)
 		var summary: String = prediction.get("summary", "NO TARGET")
-		if prediction.get("guard",false) and not prediction.get("wards",[]).is_empty():
-			summary = "WARD RITE / +%d HP" % prediction.get("heal",0)
-		var b = button("%s  %s\n%s · %d MP\n%s" % [keys[i], skill.get("name",""), skill.get("type","").to_upper(), skill.get("cost",0),summary], Rect2(40+i*250, 689, 235, 88), perform.bind(i), false, not prediction.get("valid",false))
+		if prediction.get("guard",false):
+			var focus_gain: int = int(prediction.get("focus", mini(2, maxi(0, int(hero.max_mp)-int(hero.mp)))))
+			var stance: String = "WARD RITE + HALVE" if not prediction.get("wards",[]).is_empty() else "HALVE INCOMING"
+			summary = "%s\n+%d HP / +%d Focus" % [stance, prediction.get("heal",0), focus_gain]
+		var card: String = "%s  %s\n%s · %d MP\n%s" % [keys[i], skill.get("name",""), skill.get("type","").to_upper(), skill.get("cost",0),summary]
+		if prediction.get("guard",false): card = "%s  %s\n%s" % [keys[i], skill.get("name",""),summary]
+		var b = button(card, Rect2(40+i*250, 689, 235, 88), perform.bind(i), false, not prediction.get("valid",false), false, 16)
 		b.add_theme_font_size_override("font_size",16)
-		b.tooltip_text = skill.get("description","") + ("\nForecast: %d titan HP, including any sever rupture. Part damage is shown on the button." % prediction.get("titan_damage",0) if not prediction.get("guard",false) else "\nDefend halves normal attacks and cancels a wardable rite targeting this hero. The live omen updates after Defend.")
+		b.tooltip_text = display_text(skill.get("description","") + ("\nForecast: %d titan HP, including any sever rupture. Part damage is shown on the button." % prediction.get("titan_damage",0) if not prediction.get("guard",false) else "\nDefend halves normal attacks and cancels a wardable rite targeting this hero. The live omen updates after Defend."))
 		var icon_path: String="res://assets/ui/"+skill.get("type","slash")+".png"
 		if ResourceLoader.exists(icon_path):
 			b.icon=load(icon_path)
@@ -461,7 +539,7 @@ func show_omen(threat: Dictionary) -> void:
 		paragraph(threat.description,Vector2(40,301),287,18,omen_shade(threat.status))
 		var hint: String = "Sever this source to cancel its attack." if threat.status=="staggered" else ("The party is safe this round." if threat.status in ["cancelled","warded","missed"] else "Break this source to halve its attack.")
 		if not rhythm.is_empty(): hint=str(rhythm.description)
-		paragraph(hint,Vector2(40,410),287,15,Color("b0c1bc"))
+		paragraph(hint,Vector2(40,400),287,15,Color("b0c1bc"))
 		return
 	for i in range(attacks.size()):
 		var attack: Dictionary=attacks[i]
@@ -517,7 +595,7 @@ func cycle_part(direction: int) -> void:
 	refresh()
 
 func perform(index: int) -> void:
-	if finisher_active(): return
+	if finisher_active() or coach_open or recovery_notice_open or save_error_open: return
 	var before_hp: int=int(model.boss.get("hp",0))
 	var before_gold: int=int(model.run.get("gold",0))
 	var before_ash: int=int(model.run.get("essence",0))
@@ -591,8 +669,8 @@ func draw_enemy_feedback() -> void:
 	var rise: float = (1.1-enemy_flash)*40.0
 	for i in range(3):
 		if enemy_wards[i]:
-			combat_feedback.draw_string_outline(font,party_feet[i]+Vector2(-26,-117-rise),"WARD",HORIZONTAL_ALIGNMENT_LEFT,-1,24,3,Color(0.035,0.06,0.08,alpha))
-			combat_feedback.draw_string(font,party_feet[i]+Vector2(-26,-117-rise),"WARD",HORIZONTAL_ALIGNMENT_LEFT,-1,24,Color(0.48,0.84,0.77,alpha))
+			combat_feedback.draw_string_outline(font,party_feet[i]+Vector2(-26,-117-rise),display_text("WARD"),HORIZONTAL_ALIGNMENT_LEFT,-1,24,3,Color(0.035,0.06,0.08,alpha))
+			combat_feedback.draw_string(font,party_feet[i]+Vector2(-26,-117-rise),display_text("WARD"),HORIZONTAL_ALIGNMENT_LEFT,-1,24,Color(0.48,0.84,0.77,alpha))
 		if enemy_losses[i] <= 0: continue
 		var point: Vector2 = party_feet[i]+Vector2(0,-55)
 		var color: Color = Color(1.0,0.48,0.34,alpha)
@@ -682,7 +760,7 @@ func party_summary(y: int) -> void:
 	for relic in model.run.get("relics",[]):
 		names.append(relic.get("name","Relic"))
 	paragraph("RELICS / " + (", ".join(names) if not names.is_empty() else "None yet"), Vector2(65,y+90),1000,15,Color("c5cebc"))
-	var build_button = button("B / VIEW BUILD",Rect2(1120,y+86,235,36),func(): build_open=true; refresh())
+	var build_button = button("B / VIEW BUILD",Rect2(1120,y+86,235,36),func(): build_open=true; refresh(),false,false,false,14)
 	build_button.add_theme_font_size_override("font_size",14)
 
 func panel_at(rect: Rect2) -> void:
@@ -714,7 +792,7 @@ func show_help() -> void:
 	panel.add_theme_stylebox_override("panel",style(Color("101c24"),GOLD))
 	ui.add_child(panel)
 	label_at("THE ART OF UNMAKING",Vector2(285,135),32,GOLD)
-	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves every visible omen.\n5. Defend halves normal damage and cancels a wardable rite marked on that hero.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • B build / relics • V studio • H guide • M sound • Esc menu\n\nThere are no timers. Skill buttons predict damage and break/sever.\nThe omen updates after break, sever and guard. B shows relic effects.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,21)
+	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves every visible omen.\n5. Defend halves normal damage and cancels a wardable rite marked on that hero.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • B build / relics • V studio • H guide • M sound • Esc menu\n\nThere are no timers. Skill buttons predict damage and break/sever.\nThe omen updates after break, sever and guard. B shows relic effects.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,20)
 	button("CLOSE GUIDE",Rect2(855,716,285,50),func(): help_open=false; refresh(),true)
 
 func show_build() -> void:
@@ -975,8 +1053,8 @@ func pixel_frame(variant: String) -> StyleBoxTexture:
 	frame.texture_margin_bottom=8
 	frame.content_margin_left=16
 	frame.content_margin_right=16
-	frame.content_margin_top=10
-	frame.content_margin_bottom=10
+	frame.content_margin_top=6
+	frame.content_margin_bottom=6
 	return frame
 
 func meter(rect: Rect2, ratio: float, color: Color) -> void:
@@ -992,3 +1070,156 @@ func meter(rect: Rect2, ratio: float, color: Color) -> void:
 	fill.color=color
 	fill.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	ui.add_child(fill)
+
+func display_text(source: String) -> String:
+	var translated: String = Localization.translate(source)
+	if Localization.get_language() == "en":
+		# Terminology normalization is display-only; Localization's English API
+		# itself remains exact passthrough for canonical model/save compatibility.
+		translated = translated.replace("essence", "ash").replace("Essence", "Ash").replace("ESSENCE", "ASH")
+		translated = translated.replace(" MP", " Focus").replace("FOCUS", "Focus").replace(" focus", " Focus")
+	return translated
+
+func apply_language_theme() -> void:
+	font = Localization.load_display_font()
+	if ui != null:
+		var local_theme: Theme = Theme.new()
+		local_theme.default_font = font
+		local_theme.set_font("font", "TooltipLabel", font)
+		local_theme.set_font_size("font_size", "TooltipLabel", 17)
+		ui.theme = local_theme
+	get_window().title = display_text("ASHEN OATH — The Hollow Crown")
+
+func toggle_language() -> void:
+	Localization.set_language("en" if Localization.get_language() == "ko" else "ko")
+	if not Localization.save_preferences(): message = "The language preference could not be saved."
+	elif message == "The language preference could not be saved.": message = ""
+	apply_language_theme()
+	refresh(false)
+
+func should_show_first_battle_coach() -> bool:
+	if not coach_eligible or coach_open or recovery_notice_open or save_error_open or menu or model.phase != "battle" or help_open or build_open or not confirmation.is_empty(): return false
+	if int(model.meta.get("runs",0)) != 0 or int(model.run.get("battles_won",0)) != 0 or model.round_number != 1 or bool(model.run.get("first_battle_coach_seen",false)): return false
+	for hero in model.heroes:
+		if bool(hero.acted): return false
+	for part in model.parts:
+		if bool(part.broken) or bool(part.severed) or int(part.hp) < int(part.max_hp) or int(part.shield) < int(part.max_shield): return false
+	return true
+
+func dismiss_first_battle_coach() -> void:
+	coach_open = false
+	coach_eligible = false
+	model.run["first_battle_coach_seen"] = true
+	refresh()
+
+func show_first_battle_coach() -> void:
+	var blocker = ColorRect.new()
+	blocker.color = Color(0,0,0,0.82)
+	blocker.size = Vector2(1440,900)
+	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(blocker)
+	panel_at(Rect2(280,165,880,585))
+	label_at("YOUR FIRST BATTLE",Vector2(320,195),30,GOLD,800)
+	paragraph("1. Choose a hero, then a body part. Match its weakness to remove extra shields and BREAK it.\n\n2. A later strike can SEVER a broken part once its HP reaches zero. Sever the source of an omen to cancel that attack.\n\n3. Q is a free attack. R is Defend: halve normal damage and recover up to 2 Focus. A marked hero can Defend to cancel a wardable rite.\n\nRead the live omen and damage forecast before committing. Nothing moves until you act.",Vector2(320,253),795,20)
+	button("ENTER / START BATTLE",Rect2(785,668,335,55),dismiss_first_battle_coach,true)
+	label_at("ESC / DISMISS · H / GUIDE ANYTIME",Vector2(320,682),14,TEAL,450)
+
+func sync_save_notices() -> void:
+	save_notice = model.save_message if model.save_status == "error" else ""
+	if save_notice.is_empty():
+		save_error_open = false
+		dismissed_save_error = ""
+	elif save_notice != dismissed_save_error:
+		save_error_open = true
+	if not model.recovery_message.is_empty() and model.recovery_message != recovery_notice:
+		recovery_notice = model.recovery_message
+		recovery_notice_open = true
+
+func dismiss_recovery_notice() -> void:
+	model.clear_recovery_notice()
+	recovery_notice = ""
+	recovery_notice_open = false
+	refresh(false)
+
+func open_save_error() -> void:
+	save_error_open = true
+	dismissed_save_error = ""
+	refresh(false)
+
+func dismiss_save_error() -> void:
+	dismissed_save_error = save_notice
+	save_error_open = false
+	refresh(false)
+
+func retry_save() -> void:
+	if finisher_active(): return
+	var success: bool = model.retry_save()
+	if success:
+		save_error_open = false
+		dismissed_save_error = ""
+		message = "Journey and ember vault saved together."
+	refresh(false)
+
+func request_reload_save() -> void:
+	if finisher_active(): return
+	# The confirmation is explicit because reload discards in-memory actions.
+	recovery_notice_open = false
+	save_error_open = false
+	dismissed_save_error = save_notice
+	confirmation = "reload_save"
+	refresh(false)
+
+func reload_saved_journey() -> void:
+	model.clear_recovery_notice()
+	var loaded_profile: bool = model.load_meta()
+	var loaded_journey: bool = model.load_resume() if loaded_profile else false
+	if loaded_profile and model.recovery_status != "conflict":
+		model.clear_recovery_notice()
+		recovery_notice = ""
+		recovery_notice_open = false
+		save_error_open = false
+		dismissed_save_error = ""
+		# A loaded checkpoint is already durable. Clear only obsolete I/O status;
+		# do not create a new revision merely because the player reloaded it.
+		model.save_status = "idle"
+		model.save_message = ""
+		coach_open = false
+		coach_eligible = false
+		help_open = false
+		build_open = false
+		menu = not loaded_journey
+		restore_battle_selection()
+		message = "Saved checkpoint reloaded."
+	else:
+		recovery_notice = model.recovery_message
+		recovery_notice_open = not recovery_notice.is_empty()
+	refresh(false)
+
+func notice_backdrop() -> void:
+	var blocker = ColorRect.new()
+	blocker.color = Color(0,0,0,0.86)
+	blocker.size = Vector2(1440,900)
+	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(blocker)
+	panel_at(Rect2(290,220,860,420))
+
+func show_recovery_notice() -> void:
+	notice_backdrop()
+	label_at("SAVE RECOVERY NOTICE",Vector2(330,253),29,GOLD,780)
+	paragraph(recovery_notice,Vector2(330,314),770,22)
+	if model.recovery_status == "conflict":
+		button("RELOAD SAVED JOURNEY",Rect2(330,546,360,60),request_reload_save)
+	button("ENTER / CONTINUE",Rect2(785,546,325,60),dismiss_recovery_notice,true)
+
+func show_save_error() -> void:
+	notice_backdrop()
+	label_at("SAVE NEEDS ATTENTION",Vector2(330,253),29,GOLD,780)
+	paragraph(save_notice,Vector2(330,314),770,21)
+	button("ENTER / RETRY SAVE",Rect2(330,546,265,60),retry_save,true)
+	if model.recovery_status == "conflict" or model.save_message.begins_with("A newer checkpoint exists."):
+		button("RELOAD SAVED JOURNEY",Rect2(607,546,240,60),request_reload_save,false,false,false,15)
+	button("ESC / KEEP PLAYING",Rect2(859,546,250,60),dismiss_save_error,false,false,false,15)
+
+func show_language_button() -> void:
+	var language_button = button("L  한국어" if Localization.get_language() == "ko" else "L  English", LANGUAGE_RECT, toggle_language, false, false, true)
+	language_button.tooltip_text = display_text("L / Change language (한국어 / English)")

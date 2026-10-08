@@ -35,3 +35,7 @@ The previously generated transparent 1254×1254 master is integrated unchanged a
 `generated_actor_art.gd` selects runtime atlas regions and animates a continuous mesh, preserving the five animation clocks and attack event semantics. These are 12 image-generated hero poses with rigged animation, not 372 independently image-generated drawings. The older authored sheets remain as provenance/regression fixtures and fallback assets. Portraits also come from the new master. `generated_monster.gd` uses runtime head/arm/leg alpha masks to preserve the gameplay severing states. The master SHA-256 and integration details are in `assets/generated/actors_master.json`.
 
 Native Godot source execution and on-screen combat/studio QA succeeded. No new native executable was exported because the official Windows/Linux export templates remain unavailable. Existing checkpoint-5 binaries do not contain checkpoint-6 or checkpoint-7 art.
+
+## Korean display font · checkpoint 12
+
+`assets/fonts/AshenKorean-Regular.otf` is a renamed subset of the installed Debian Noto Sans CJK KR Regular face. All 11,172 modern Hangul syllables, Jamo, Latin and used symbols are retained. The original SIL Open Font License 1.1 and attribution are bundled in `AshenKorean-OFL.txt`; source details, subset ranges and naming are recorded in the adjacent provenance files. Upstream: https://github.com/notofonts/noto-cjk. No upstream endorsement is implied.

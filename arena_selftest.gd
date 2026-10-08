@@ -1,4 +1,5 @@
 extends SceneTree
+const Localization = preload("res://localization.gd")
 ## Asset/selector/layout contracts only; native composition is checked separately.
 var checks: int=0
 var failures: int=0
@@ -8,6 +9,8 @@ func check(value: bool, context: String) -> void:
 		failures+=1
 		push_error(context)
 func _initialize() -> void:
+	Localization.set_language("en")
+	Localization.save_preferences()
 	call_deferred("run_tests")
 func run_tests() -> void:
 	var scene=load("res://main.tscn").instantiate()

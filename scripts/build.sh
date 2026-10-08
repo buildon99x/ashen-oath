@@ -28,10 +28,7 @@ if [[ "$ACTUAL_VERSION" != "$VERSION"* ]]; then
   exit 1
 fi
 "$GODOT" --headless --path "$ROOT" --editor --quit >"$OUT/logs/import.log" 2>&1
-for test in selftest ui_selftest resume_selftest campaign_stress animation_selftest generated_art_selftest tactical_selftest encounter_selftest encounter_ui_selftest finisher_selftest arena_selftest; do
-  "$GODOT" --headless --path "$ROOT" --script "res://$test.gd" >"$OUT/logs/$test.log" 2>&1
-  cat "$OUT/logs/$test.log"
-done
+"$ROOT/scripts/test.sh" "$OUT/logs"
 "$GODOT" --headless --path "$ROOT" --export-release 'Windows x64' "$OUT/windows/ashen-oath.exe" >"$OUT/logs/export-windows.log" 2>&1
 "$GODOT" --headless --path "$ROOT" --export-release 'Linux x64' "$OUT/linux/ashen-oath.x86_64" >"$OUT/logs/export-linux.log" 2>&1
 chmod +x "$OUT/linux/ashen-oath.x86_64"
@@ -43,6 +40,7 @@ fi
 for platform in windows linux; do
   cp "$ROOT/GODOT_LICENSE.txt" "$ROOT/GODOT_THIRD_PARTY_NOTICES.txt" "$OUT/$platform/"
   cp "$ROOT/scripts/PLAY.txt" "$OUT/$platform/PLAY.txt"
+  cp "$ROOT/assets/fonts/AshenKorean-OFL.txt" "$OUT/$platform/ASHEN_KOREAN_OFL.txt"
   if [[ -f "$ROOT/assets/fonts/OFL.txt" ]]; then cp "$ROOT/assets/fonts/OFL.txt" "$OUT/$platform/PIXELIFY_OFL.txt"; fi
 done
 python3 "$ROOT/scripts/package_builds.py" "$OUT"

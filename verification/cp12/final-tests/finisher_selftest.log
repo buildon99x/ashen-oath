@@ -1,0 +1,13 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+FINISHER: nonlethal, guard and rejected-action checks finished
+FINISHER: HP kill and all three last-part sever paths finished
+FINISHER: public action guards and stale button emissions finished
+FINISHER: viewport input, held/released keys and click isolation finished
+FINISHER: focused old action button and Space-through-kill isolation finished
+FINISHER: battle Space/confirmation overlap and preserved menu/dialog accessibility finished
+FINISHER: natural timeout, idempotent completion and one reward choice finished
+FINISHER: autosave during presentation and fresh-scene resume finished
+FINISHER: final-boss reward and one-time legacy settlement finished
+FINISHER: defeat, shader defaults and fresh-battle reset finished
+FINISHER TESTS: 374 checks; 0 failures (headless scene/model/input/save coverage, not visual QA)

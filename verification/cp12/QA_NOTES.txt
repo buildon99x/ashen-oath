@@ -1,0 +1,97 @@
+CP12 native QA record, 2026-10-08. Native checks and injected fixtures are distinguished below.
+
+Migration campaign: existing CP11 cycle 4, seed 447728, 189 banked Ash,
+Vitality 1, three completed victories, Gold 85, HP 83/67/71.
+Native CP12 opened the old v1 files and resumed normally. A second observed
+click chose the reward's healing option once and advanced node 3 -> 4.
+The original v1 pair was preserved before this test. Current journey writes
+v2 complete checkpoints; standalone v1 vault remains valid and is superseded
+by the newer complete transaction. No save progress was manually edited.
+
+Actual native Korean title, returning menu, English toggle, Korean guide,
+character studio and return, map, event and Judge battle were inspected.
+Hangul and long two-source omen fit. Window title changes with language.
+At the Judge: R1 Mara W + Sable Q broke legs; Ivo E severed them exactly
+at 28 HP and healed 7. R2 Mara Defend (actual +1 HP/+1 Focus), Ivo W and
+Sable W broke the head; the Korean forecast predicted Mara2/Ivo4/Sable4
+and fully warded Second Verdict. Actual R3 HP 81/62/66 matches from
+83/66/70; Ivo and Sable focus drain then regeneration also matched.
+This is an existing journey continuation, not a new controlled full run.
+
+Native audio uses Dummy; listening and FPS are unverified. Current exports
+remain older CP5 because official 4.6.3 export templates are unavailable.
+
+Judge round 3: Mara E severed the head, Ivo W broke the arm and Sable E
+severed it to finish. Native Korean final-hit and reward screens captured.
+Gold 85 -> 123 exactly; reward remains unselected when the app is closed.
+Snapshot revision 29, phase reward, HP 81/62/66, Focus 3/2/3.
+
+Fresh native profile (separate from migration campaign): seed 451684,
+0 Ash/0 upgrades. First node offered event/relic rather than a fight.
+Switched to English, closed/restarted, confirmed English preference persisted,
+then switched back to Korean and resumed the same map. Chose Share your ember
+at the pilgrim (8 HP per hero for Cinder Heart and 3 journey Ash), then chose
+the first fight at crossing 2. Contextual Korean tutorial appeared there.
+A Q press while the tutorial was open consumed no action or Focus; all three
+actions remained, HP70/54/58. Tutorial dismissed with Enter normally.
+
+Review fix: first-battle eligibility now restores after quitting before a
+first fight. Previously it was only initialized by the Begin click in the
+same process. A scene-load regression verifies this and no action loss.
+Low-Focus native check: Mara used E in rounds 1 and 2, then had 2 Focus
+in round 3. E was rejected with Korean reason and no spent action. The R
+button advertised +6 HP (Cinder Heart) and +2 Focus; Defend delivered it.
+The 7-damage choir then dealt guarded 4 to Mara and 7 to the others;
+round 4 state HP53/38/42, Focus5/8/7 matches ordered recovery/drain/regen.
+The rest of this profile deliberately declines actions to test death and
+retry. This is a failure-flow test, not evidence of normal-play difficulty.
+
+Deliberate failure reached round 10: all heroes at 0 HP, banked Ash 3,
+completed runs 1, victories 0. The defeated snapshot was saved at revision36.
+The defeated journey was then actually restarted and viewed again: Ash stayed
+3, runs stayed 1, victories0. Returned to the title and began a new cycle.
+The fresh party returned to 78/62/66 with 3 banked Ash and no extra settlement.
+
+Prepared isolated native recovery fixture: copied the actually played Judge
+reward checkpoint into a separate profile, truncated only that copy's primary
+journey, retained its valid backup, and placed a directory at its temporary
+write path to simulate an I/O failure. No played profile was damaged. Native
+startup correctly showed Korean backup-recovery warning; Continue then Resume
+showed Korean save-failure warning. Retrying while blocked remained an error.
+This setup is fault injection, not a naturally occurring playthrough defect.
+After moving the isolated blocking directory aside, pressing Enter retried
+both saves successfully. Native warning closed, Korean saved-status appeared,
+and the still-unselected reward remained Gold123, Ash189, HP81/62/66. Both
+copies were valid v2 checkpoints; reload summary reported recovery=none.
+
+A further native restart of the repaired fixture opened a clean Korean title
+with no repeat recovery/error overlay; vault stayed189 and reward123.
+
+Migrated fourth campaign continued toward the Korean ending: Judge reward
+claimed Hollow Bell, crossing7 shrine claimed Glass Tooth (all5 relics),
+crossing8 shrine offering cost10Gold, restored12HP and granted5journeyAsh.
+Pale started at Gold113, HP83/67/71 with Vitality1 and one earlier Temper.
+R1 MaraQ + IvoW broke legs, SableE severed exactly. R2 Mara warded Solar
+Brand, IvoW broke head, SableE left2headHP. Incoming3/5/5 preceded Hollow
+Bell healing, yielding HP83/65/69. R3 MaraQ severed head; Ivo at1Focus
+Defended for recovery and guard, SableQ stripped3armshields. These normal
+input choices responded to the Korean forecast and current resources.
+R3 Ivo took guarded7 then Hollow Bell healed3, exactly as forecast.
+R4 MaraW broke the remaining arm, IvoE dealt33 and healed7, SableQ severed
+its last6HP. Pale fell in4rounds. Final reward was the4Ash relic echo.
+Fourth completed journey: seed447728,4fights/3bosses,1Vitality legacy rank,
+oneTemper,all5relics,one healing reward earlier and one shrine offering heal.
+Final59Ash gained (vault189 ->248),157Gold,+13karma,HP83/67/71,Focus4/1/2.
+This campaign began underCP11 and continued after v1 migration underCP12;
+its final Judge/Pale/ending were played in Korean. It is not an independent
+new CP12 difficulty comparison. No enemy/combat values changed inCP12.
+After victory, the Korean title correctly offered Review Last Journey.
+Bought Focus rank1 for14Ash: vault248 ->234, with the next-run effect shown.
+Began cycle5 through normal input: HP83/67/71, maximum Focus7/9/8, bank234,
+completed runs4/wins4, seed453115. Purchase and settlement did not duplicate.
+
+Remaining quality gaps: the final reward still advertises healing that ends
+immediately, passive-relic collection converges on the same build, and no
+pre-run Oath alternatives are implemented yet. These are next-pass work,
+not claimed complete. Original pose rigs and coarse sever masks remain
+visibly below the commercial reference's bespoke animation/detail.

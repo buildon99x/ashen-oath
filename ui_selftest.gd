@@ -1,4 +1,5 @@
 extends SceneTree
+const Localization = preload("res://localization.gd")
 var checks: int = 0
 func check(value: bool, text: String) -> void:
 	if not value:
@@ -7,6 +8,8 @@ func check(value: bool, text: String) -> void:
 	assert(value, text)
 	checks += 1
 func _initialize() -> void:
+	Localization.set_language("en")
+	Localization.save_preferences()
 	call_deferred("run_tests")
 func run_tests() -> void:
 	var scene = load("res://main.tscn").instantiate()
@@ -20,6 +23,7 @@ func run_tests() -> void:
 	scene.model.start_battle(1)
 	scene.refresh()
 	await process_frame
+	if scene.coach_open: scene.dismiss_first_battle_coach()
 	check(scene.ui.get_child_count() > 12, "battle controls rendered into scene tree")
 	scene.select_hero(0)
 	scene.select_part(0)

@@ -1,6 +1,6 @@
 # Native builds
 
-**Checkpoint 11 status:** region-arena source regressions, both native region compositions and a continued full journey are verified. Korean UI and save-durability repairs are separate pending work. Current Windows/Linux exports are blocked by missing official 4.6.3 templates. Previously delivered native archives are checkpoint 5 and do not contain the new background/actor art.
+**Checkpoint 12 source verification:** Korean/English display and transactional save recovery now have dedicated regression suites. Native lifecycle checks are documented separately in the test report. Current Windows/Linux exports are blocked by missing official 4.6.3 templates. Previously delivered native archives are checkpoint 5 and do not contain the new background/actor art.
 
 The repository includes original Godot source plus packaged Windows x64 and Linux x64 releases.
 The packages run without a separately installed Godot editor. Each ZIP contains a native executable
@@ -39,6 +39,12 @@ writes SHA-256 checksums. It stops on a failed check.
 The Windows build is unsigned. Windows-native runtime testing and SmartScreen reputation are not
 established by exporting it from Linux. The headless Linux smoke test is not visual playtesting;
 see the current test report for separately performed screen-based checks.
+
+## Source tests without export templates
+
+Run `./scripts/test.sh`. Each suite receives an isolated save/config/cache profile under `.runtime/tests/`; no played campaign is modified. The script rejects Godot script errors even if the engine exits with status zero. It includes Korean glyph/layout checks, transactional-save corruption and interruption fixtures, and a separate fresh-profile startup test. These automated suites complement, rather than replace, native human-input play.
+
+The Korean display font is bundled with its SIL OFL license. Future native packages include that notice alongside the existing font and engine licenses.
 
 ## Outputs
 
