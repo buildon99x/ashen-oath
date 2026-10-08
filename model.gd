@@ -41,7 +41,12 @@ func _init() -> void:
 
 func new_run(seed_value: int = 0) -> bool:
 	if not _settled and not run.is_empty():
-		_settle_run(false)
+		# Abandoning is not a defeat: do not turn repeatable opening shrines into
+		# free permanent growth. Only an actual defeat or victory banks earnings.
+		meta.runs = int(meta.runs) + 1
+		_settled = true
+		if persist_meta:
+			save_meta()
 	var actual_seed: int = seed_value
 	if actual_seed == 0:
 		actual_seed = int(Time.get_unix_time_from_system())
@@ -71,7 +76,7 @@ func _make_heroes() -> void:
 	heroes.clear()
 	var vitality: int = int(meta.upgrades.vitality) * 5
 	var focus: int = int(meta.upgrades.focus)
-	var guard_skill: Dictionary = _skill("Defend", "guard", 0, 0, "Halve incoming damage this round. Restore 2 focus and 3 HP.")
+	var guard_skill: Dictionary = _skill("Defend", "guard", 0, 0, "Halve incoming damage this round; cancel a wardable rite targeting this hero. Restore 2 focus and 3 HP.")
 	heroes.append({"name": "Mara", "role": "Ironbound", "hp": 78 + vitality, "max_hp": 78 + vitality, "mp": 6 + focus, "max_mp": 6 + focus, "acted": false, "guard": false, "skills": [
 		_skill("Oathblade", "slash", 14, 0, "14 slash damage. Exploit SLASH weakness to remove 2 shields."),
 		_skill("Anvil Blow", "blunt", 12, 2, "12 blunt damage. Remove 1 extra shield.", 1),
@@ -194,7 +199,7 @@ func act(hero_index: int, skill_index: int, part_index: int = 0) -> bool:
 		hero.mp = mini(int(hero.max_mp), int(hero.mp) + 2)
 		var recovery: int = 3 + (3 if has_relic("cinder_heart") else 0)
 		hero.hp = mini(int(hero.max_hp), int(hero.hp) + recovery)
-		_note("%s defends: incoming damage halved; +2 focus, +%d HP." % [hero.name, recovery])
+		_note("%s defends: normal attacks halved, wardable rites cancelled; +2 focus, +%d HP." % [hero.name, recovery])
 		last_error = ""
 		return true
 	if part_index < 0 or part_index >= parts.size() or bool(parts[part_index].severed):
@@ -245,14 +250,9 @@ func act(hero_index: int, skill_index: int, part_index: int = 0) -> bool:
 func end_round() -> bool:
 	if phase != "battle":
 		return _reject("There is no round to end.")
-	var source_part: int = int(intent.part)
-	if bool(parts[source_part].severed):
-		_note("%s fails. Its source was severed." % intent.name)
-	elif bool(parts[source_part].broken):
-		_note("%s is staggered: %s deals half damage." % [parts[source_part].name, intent.name])
-		_resolve_intent(0.5)
-	else:
-		_resolve_intent(1.0)
+	# Resolve the same sequential forecast that the UI shows. Prepared targets
+	# never change, even when an earlier attack kills a later attack's target.
+	_resolve_attacks()
 	if _living_heroes().is_empty():
 		phase = "defeat"
 		title = "The oath falls silent"
@@ -271,29 +271,169 @@ func end_round() -> bool:
 	return true
 
 
-func _resolve_intent(multiplier: float) -> void:
-	for target_value: Variant in intent.targets:
-		var target: int = int(target_value)
-		var hero: Dictionary = heroes[target]
-		if int(hero.hp) <= 0:
+func get_intent_attacks() -> Array[Dictionary]:
+	## Ordered copies; legacy saves still represent exactly one pending attack.
+	var attacks: Array[Dictionary] = []
+	if intent.is_empty():
+		return attacks
+	var primary: Dictionary = intent.duplicate(true)
+	primary.erase("secondary")
+	primary.erase("rhythm")
+	primary["wardable"] = bool(primary.get("wardable", false))
+	attacks.append(primary)
+	if intent.get("secondary", null) is Dictionary and not intent.secondary.is_empty():
+		attacks.append(intent.secondary.duplicate(true))
+	return attacks
+
+
+func preview_intent() -> Dictionary:
+	## Exact, read-only sequential HP/focus loss; no recovery or next-round gains.
+	var losses: Array[int] = [0, 0, 0]
+	var focus_losses: Array[int] = [0, 0, 0]
+	var result: Dictionary = {"status": "none", "losses": losses, "focus_losses": focus_losses, "source": "", "description": "No attack is prepared.", "attacks": [], "rhythm": intent.get("rhythm", {}).duplicate(true)}
+	if phase != "battle" or intent.is_empty():
+		return result
+	var remaining_hp: Array[int] = []
+	var remaining_focus: Array[int] = []
+	for hero: Dictionary in heroes:
+		remaining_hp.append(int(hero.hp))
+		remaining_focus.append(int(hero.mp))
+	var descriptions: Array[String] = []
+	var all_cancelled: bool = true
+	var any_warded: bool = false
+	var any_damage: bool = false
+	var any_full_damage: bool = false
+	for attack: Dictionary in get_intent_attacks():
+		var part_index: int = int(attack.part)
+		var source: Dictionary = parts[part_index]
+		var source_status: String = "cancelled" if source.severed else ("staggered" if source.broken else "incoming")
+		var wardable: bool = bool(attack.get("wardable", false))
+		var attack_losses: Array[int] = [0, 0, 0]
+		var attack_focus_losses: Array[int] = [0, 0, 0]
+		var lines: Array[String] = []
+		var living_targets: int = 0
+		var warded_targets: int = 0
+		for target_value: Variant in attack.targets:
+			var target: int = int(target_value)
+			var hero: Dictionary = heroes[target]
+			if remaining_hp[target] <= 0 or source_status == "cancelled":
+				continue
+			living_targets += 1
+			if wardable and bool(hero.guard):
+				warded_targets += 1
+				lines.append("%s wards this rite: no damage or focus loss" % hero.name)
+				continue
+			var damage: int = maxi(1, int(float(attack.damage) * (0.5 if source_status == "staggered" else 1.0)))
+			if bool(hero.guard):
+				damage = maxi(1, int(ceil(float(damage) * 0.5)))
+			var hp_loss: int = mini(remaining_hp[target], damage)
+			var focus_loss: int = mini(1, remaining_focus[target]) if part_index == 2 and not bool(hero.guard) else 0
+			remaining_hp[target] -= hp_loss
+			remaining_focus[target] -= focus_loss
+			attack_losses[target] += hp_loss
+			attack_focus_losses[target] += focus_loss
+			losses[target] += hp_loss
+			focus_losses[target] += focus_loss
+			any_damage = any_damage or hp_loss > 0
+			any_full_damage = any_full_damage or (hp_loss > 0 and source_status == "incoming")
+			lines.append("%s -%d HP%s%s" % [hero.name, hp_loss, " / -%d focus" % focus_loss if focus_loss > 0 else "", " / guarded" if hero.guard else ""])
+		var status: String = source_status
+		if source_status == "cancelled":
+			lines.append("Source severed. This rite is cancelled.")
+		elif living_targets == 0:
+			status = "missed"
+			lines.append("Its fixed target has fallen. This rite will not retarget.")
+		elif warded_targets == living_targets:
+			status = "warded"
+		all_cancelled = all_cancelled and status == "cancelled"
+		any_warded = any_warded or status == "warded"
+		var counterplay: String = "Break %s to halve; sever it to cancel." % source.name
+		if wardable:
+			var target_names: Array[String] = []
+			for target_value: Variant in attack.targets:
+				target_names.append(str(heroes[int(target_value)].name))
+			counterplay = "%s: Defend cancels this rite. %s" % [", ".join(target_names), counterplay]
+		else:
+			counterplay += " Defend halves damage to that hero."
+		var detail: String = "\n".join(lines)
+		result.attacks.append({"name": str(attack.name), "part": part_index, "source": str(source.name), "source_status": source_status, "status": status, "wardable": wardable, "targets": attack.targets.duplicate(), "damage": int(attack.damage), "losses": attack_losses, "focus_losses": attack_focus_losses, "description": detail, "counterplay": counterplay})
+		descriptions.append("%s: %s" % [attack.name, detail])
+	result.status = "incoming" if any_full_damage else ("staggered" if any_damage else ("cancelled" if all_cancelled else ("warded" if any_warded else "missed")))
+	result.source = str(result.attacks[0].source)
+	result.description = result.attacks[0].description if result.attacks.size() == 1 else "\n".join(descriptions)
+	return result
+
+
+func preview_action(hero_index: int, skill_index: int, part_index: int) -> Dictionary:
+	## Forecast only. Never spend focus, consume RNG, or modify a target.
+	if phase != "battle" or hero_index < 0 or hero_index >= heroes.size():
+		return {"valid": false}
+	var hero: Dictionary = heroes[hero_index]
+	if skill_index < 0 or skill_index >= hero.skills.size():
+		return {"valid": false}
+	var skill: Dictionary = hero.skills[skill_index]
+	var usable: bool = hero.hp > 0 and not hero.acted and hero.mp >= skill.cost
+	if skill.type == "guard":
+		var recovery: int = mini(int(hero.max_hp) - int(hero.hp), 3 + (3 if has_relic("cinder_heart") else 0))
+		var wards: Array[String] = []
+		for attack: Dictionary in get_intent_attacks():
+			if bool(attack.get("wardable", false)) and hero_index in attack.targets and not bool(parts[int(attack.part)].severed):
+				wards.append(str(attack.name))
+		var summary: String = ("WARD RITE + HALVE / +%d HP" if not wards.is_empty() else "HALVE INCOMING / +%d HP") % recovery
+		return {"valid": usable, "guard": true, "heal": recovery, "focus": mini(2, int(hero.max_mp) - int(hero.mp)), "wards": wards, "summary": summary}
+	if part_index < 0 or part_index >= parts.size() or parts[part_index].severed:
+		return {"valid": false}
+	var part: Dictionary = parts[part_index]
+	var weakness: bool = skill.type == part.weakness
+	var shield_hit: int = 1 + int(skill.break_power) + (1 if weakness else 0) + (1 if weakness and has_relic("glass_tooth") else 0)
+	var damage: int = int(skill.power) + int(meta.upgrades.force) * 2 + int(run.get("damage_bonus", 0)) + (2 if has_relic("red_thread") else 0)
+	if part.broken:
+		damage = int(damage * 1.35)
+		if skill.name == "Sundering Arc": damage += 8
+		elif skill.name == "Last Mercy": damage += 10
+	else:
+		damage = maxi(1, int(damage * 0.55) - int(part.armor))
+	var remaining: int = maxi(0 if part.broken else 1, int(part.hp) - damage)
+	var severs: bool = part.broken and remaining == 0
+	var breaks: bool = not part.broken and int(part.shield) <= shield_hit
+	var shield_loss: int = 0 if part.broken else mini(int(part.shield), shield_hit)
+	var titan_damage: int = mini(int(boss.hp), damage + (12 + int(boss.tier) * 3 if severs else 0))
+	var outcome: String = "SEVER" if severs else ("BREAK" if breaks else ("EXPOSED" if part.broken else "-%d SHIELD" % shield_loss))
+	return {"valid": usable, "guard": false, "damage": int(part.hp) - remaining, "titan_damage": titan_damage, "shield_loss": shield_loss, "breaks": breaks, "severs": severs, "weakness": weakness, "summary": "%d DMG / %s" % [int(part.hp) - remaining, outcome]}
+
+
+func _resolve_attacks() -> void:
+	var forecast: Dictionary = preview_intent()
+	for attack: Dictionary in forecast.attacks:
+		if attack.status == "cancelled":
+			_note("%s fails. Its source was severed." % attack.name)
 			continue
-		var damage: int = maxi(1, int(float(intent.damage) * multiplier))
-		if bool(hero.guard):
-			damage = maxi(1, int(ceil(float(damage) * 0.5)))
-		hero.hp = maxi(0, int(hero.hp) - damage)
-		if int(intent.part) == 2 and not bool(hero.guard):
-			hero.mp = maxi(0, int(hero.mp) - 1)
-		_note("%s strikes %s for %d%s." % [intent.name, hero.name, damage, " (guarded)" if bool(hero.guard) else ""])
-		if int(hero.hp) == 0:
-			_note("%s has fallen. Rest or a healing reward can revive them." % hero.name)
+		if attack.status == "missed":
+			_note("%s fails. Its fixed target has fallen; it does not retarget." % attack.name)
+			continue
+		if attack.source_status == "staggered":
+			_note("%s is staggered: %s deals half damage." % [attack.source, attack.name])
+		for target: int in range(heroes.size()):
+			var hero: Dictionary = heroes[target]
+			var damage: int = int(attack.losses[target])
+			if damage == 0:
+				if bool(attack.wardable) and target in attack.targets and bool(hero.guard) and int(hero.hp) > 0:
+					_note("%s wards %s completely." % [hero.name, attack.name])
+				continue
+			hero.hp = int(hero.hp) - damage
+			hero.mp = int(hero.mp) - int(attack.focus_losses[target])
+			_note("%s strikes %s for %d%s." % [attack.name, hero.name, damage, " (guarded)" if bool(hero.guard) else ""])
+			if int(hero.hp) == 0:
+				_note("%s has fallen. Rest or a healing reward can revive them." % hero.name)
 
 
 func _prepare_intent() -> void:
 	var available: Array[int] = _intact_parts()
-	if available.is_empty():
+	var alive: Array[int] = _living_heroes()
+	if available.is_empty() or alive.is_empty():
+		intent.clear()
 		return
 	var part_index: int = available[(round_number - 1) % available.size()]
-	var alive: Array[int] = _living_heroes()
 	var targets: Array[int] = []
 	var tier: int = int(boss.tier)
 	var damage: int = 7 + tier * 2 + maxi(0, round_number - 5)
@@ -307,8 +447,57 @@ func _prepare_intent() -> void:
 		if part_index == 2:
 			damage -= 2
 			detail += " and drains 1 focus from unguarded heroes"
+	var rhythm: Dictionary = {}
+	var secondary_name: String = ""
+	var secondary_damage: int = 0
+	var secondary_count: int = 0
+	if bool(boss.get("milestone", false)) and tier == 2:
+		var split: bool = round_number % 2 == 0
+		var verdict_description: String = "Second Verdict marks one hero, who can Defend to cancel that rite. Next round: Single Verdict." if split else "One source acts. Next round: Split Verdict adds Second Verdict from a second intact source if one remains. Its marked hero can Defend to cancel that rite."
+		if available.size() < 2:
+			verdict_description = "Only one source remains. Second Verdict cannot form. Next round: Single Verdict." if split else "Next round: Split Verdict, but only one source remains. Second Verdict cannot form."
+		rhythm = {"id": "split" if split else "single", "name": "Split Verdict" if split else "Single Verdict", "description": verdict_description, "next": "Single Verdict" if split else "Split Verdict"}
+		if split:
+			secondary_name = "Second Verdict"
+			secondary_damage = 10
+			secondary_count = int(round_number / 2) - 1
+	elif bool(boss.get("milestone", false)) and tier == 3:
+		var beat: int = (round_number - 1) % 3
+		var names: Array[String] = ["Gathering Light", "Zenith Release", "Fading Light"]
+		var ids: Array[String] = ["gathering", "release", "recovery"]
+		var descriptions: Array[String] = [
+			"Next round: Zenith Release adds a second source if one remains. Its marked hero can Defend to cancel it.",
+			"Two sources can strike. The hero marked by Solar Brand can Defend to cancel that rite.",
+			"Recovery: one source attacks at half its usual strength. Next round: Gathering Light."]
+		if available.size() < 2:
+			descriptions[0] = "Next round: Zenith Release. Only one source remains, so no second rite can form."
+			descriptions[1] = "Only one source remains. Solar Brand cannot form. Next round: Fading Light."
+		rhythm = {"id": ids[beat], "name": names[beat], "description": descriptions[beat], "next": names[(beat + 1) % 3]}
+		if beat == 1:
+			secondary_name = "Solar Brand"
+			secondary_damage = 12
+			secondary_count = int((round_number - 2) / 3)
+		elif beat == 2:
+			damage = maxi(1, int(damage / 2))
 	intent = {"name": parts[part_index].move, "part": part_index, "damage": damage, "targets": targets, "description": "%s for %d damage. Break to halve it; sever to cancel it." % [detail, damage]}
-	_note("Round %d · %s prepares %s." % [round_number, boss.name, intent.name])
+	if not rhythm.is_empty():
+		intent["rhythm"] = rhythm
+		intent.description += " " + str(rhythm.name) + ": " + str(rhythm.description)
+	if not secondary_name.is_empty() and available.size() > 1:
+		var secondary_part: int = available[(available.find(part_index) + 1) % available.size()]
+		var secondary_target: int = alive[secondary_count % alive.size()]
+		var focus_detail: String = " and drains 1 focus" if secondary_part == 2 else ""
+		var description: String = "Targets %s for %d damage%s. %s can Defend to cancel this rite. Break %s to halve it; sever to cancel it." % [heroes[secondary_target].name, secondary_damage, focus_detail, heroes[secondary_target].name, parts[secondary_part].name]
+		intent["secondary"] = {"name": secondary_name, "part": secondary_part, "damage": secondary_damage, "targets": [secondary_target], "description": description, "wardable": true}
+		intent.description += " Second source: %s from %s. %s" % [secondary_name, parts[secondary_part].name, description]
+	elif not secondary_name.is_empty():
+		intent.description += " No second source remains; the additional rite is silenced."
+	var prepared: String = str(intent.name)
+	if intent.has("secondary"):
+		prepared += " + " + str(intent.secondary.name)
+	if not rhythm.is_empty():
+		prepared = str(rhythm.name) + " / " + prepared
+	_note("Round %d · %s prepares %s." % [round_number, boss.name, prepared])
 
 
 func _win_battle() -> void:
@@ -327,6 +516,9 @@ func _win_battle() -> void:
 		{"name": "Take the tribute", "description": "Gain 25 gold and 2 extra essence.", "kind": "gold"},
 		{"name": "Claim a relic", "description": "Gain a random unclaimed relic for the rest of this run.", "kind": "relic"}
 	]
+	if run.relics.size() >= RELICS.size():
+		rewards[2].name = "Keep the relic echo"
+		rewards[2].description = "All relics are claimed. Gain 4 unbanked ash instead."
 
 
 func choose_reward(index: int) -> bool:
@@ -368,6 +560,13 @@ func _open_event(kind: String) -> void:
 			{"name": "Share your ember", "description": "Each living hero loses 8 HP (cannot kill). Gain a relic and 3 essence.", "effect": "sacrifice"},
 			{"name": "Seize their supplies", "description": "+24 gold, -2 karma. Negative karma adds 1 shield to enemy parts.", "effect": "seize"}
 		]}
+	if run.relics.size() >= RELICS.size():
+		for option: Dictionary in event.options:
+			if option.effect == "relic":
+				option.name = "Receive the relic echo"
+				option.description = "All relics are claimed. Gain 4 unbanked ash and 1 karma."
+			elif option.effect == "sacrifice":
+				option.description = "Each living hero loses 8 HP (cannot kill). All relics claimed: gain 7 unbanked ash instead."
 
 
 func choose_event(index: int) -> bool:

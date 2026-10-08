@@ -1,0 +1,12 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+break_finish_heal: wins=100/100 min_end_hp=206 avg_end_hp=206.0 avg_essence=60.6 avg_end_gold=189.06 avg_rounds=3.14548494983278 max_fight_rounds=4
+break_finish_tribute: wins=86/100 min_end_hp=0 avg_end_hp=104.15 avg_essence=69.2 avg_end_gold=330.02 avg_rounds=3.63184931506849 max_fight_rounds=7
+random_heal: wins=100/100 min_end_hp=110 avg_end_hp=169.63 avg_essence=60.6 avg_end_gold=189.06 avg_rounds=5.49665551839465 max_fight_rounds=11
+random_tribute: wins=51/100 min_end_hp=0 avg_end_hp=41.23 avg_essence=55.14 avg_end_gold=279.0 avg_rounds=5.4859437751004 max_fight_rounds=16
+basic_spread_heal: wins=76/100 min_end_hp=0 avg_end_hp=90.36 avg_essence=55.32 avg_end_gold=180.42 avg_rounds=5.49825783972125 max_fight_rounds=9
+max_legacy_basic_tribute: wins=87/100 min_end_hp=0 avg_end_hp=105.22 avg_essence=69.44 avg_end_gold=330.63 avg_rounds=3.47350427350427 max_fight_rounds=8
+max_legacy_break_tribute: wins=100/100 min_end_hp=129 avg_end_hp=234.66 avg_essence=72.56 avg_end_gold=338.56 avg_rounds=2.46488294314381 max_fight_rounds=5
+EARLY_BANK_OPTIONS: 76/100 seeds offer noncombat essence at crossing 1
+FARM: seed=1 after first shrine run essence=5 gold=20
+FARM: after abandon/restart bank=0 reset gold=30 hero HP=78

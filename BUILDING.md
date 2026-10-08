@@ -1,6 +1,6 @@
 # Native builds
 
-**Checkpoint 7 status:** source and native Godot editor execution verified; current Windows/Linux exports are blocked by missing official 4.6.3 templates. Previously delivered native archives are checkpoint 5 and do not contain the new background/actor art.
+**Checkpoint 9 status:** source and full native Godot project play verified locally; public-source publication is pending approval; current Windows/Linux exports are blocked by missing official 4.6.3 templates. Previously delivered native archives are checkpoint 5 and do not contain the new background/actor art.
 
 The repository includes original Godot source plus packaged Windows x64 and Linux x64 releases.
 The packages run without a separately installed Godot editor. Each ZIP contains a native executable

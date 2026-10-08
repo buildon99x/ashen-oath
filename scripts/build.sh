@@ -28,7 +28,7 @@ if [[ "$ACTUAL_VERSION" != "$VERSION"* ]]; then
   exit 1
 fi
 "$GODOT" --headless --path "$ROOT" --editor --quit >"$OUT/logs/import.log" 2>&1
-for test in selftest ui_selftest resume_selftest campaign_stress animation_selftest generated_art_selftest; do
+for test in selftest ui_selftest resume_selftest campaign_stress animation_selftest generated_art_selftest tactical_selftest encounter_selftest encounter_ui_selftest; do
   "$GODOT" --headless --path "$ROOT" --script "res://$test.gd" >"$OUT/logs/$test.log" 2>&1
   cat "$OUT/logs/$test.log"
 done

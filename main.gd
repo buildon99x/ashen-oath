@@ -18,14 +18,17 @@ var actors: Array[Node2D]=[]
 var environments: Array[Texture2D]=[]
 var vignettes: Dictionary={}
 var party_feet: Array[Vector2]=[Vector2(420,480),Vector2(520,510),Vector2(620,540)]
+var victory_feet: Array[Vector2]=[Vector2(960,510),Vector2(1110,535),Vector2(1260,510)]
 var ui: Control
 var selected_hero: int = 0
 var selected_part: int = 0
 var clock_time: float = 0.0
 var menu: bool = true
 var help_open: bool = false
+var build_open: bool = false
 var muted: bool = false
 var message: String = ""
+var confirmation: String = ""
 var hit_flash: float = 0.0
 var fx_time: float=0.0
 var fx_actor: int=0
@@ -33,6 +36,10 @@ var fx_part: int=0
 var fx_kind: String="slash"
 var fx_damage: int=0
 var enemy_flash: float=0.0
+var enemy_losses: Array[int] = [0,0,0]
+var enemy_source: int = 0
+var enemy_wards: Array[bool] = [false,false,false]
+var combat_feedback: Node2D
 var audio: AudioStreamPlayer
 var font: Font = ThemeDB.fallback_font
 
@@ -47,6 +54,7 @@ func _ready() -> void:
 		hero_sprites.append(load("res://assets/hero_%d.png" % i))
 	model.load_meta()
 	model.load_resume()
+	restore_battle_selection()
 	for i in range(3):
 		var actor: Node2D=HeroAnimation.new()
 		actor.hero_index=i
@@ -55,6 +63,9 @@ func _ready() -> void:
 		actor.scale=Vector2(1.25,1.25)
 		add_child(actor)
 		actors.append(actor)
+	combat_feedback = Node2D.new()
+	combat_feedback.draw.connect(draw_enemy_feedback)
+	add_child(combat_feedback)
 	for path in ["cinder_forest","drowned_reliquary","pale_throne"]:
 		var file: String="res://assets/environments/"+path+".png"
 		environments.append(load(file) as Texture2D if ResourceLoader.exists(file) else forest)
@@ -69,14 +80,17 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	clock_time += delta
-	generated_monster.visible=menu or model.phase in ["battle","victory","defeat"]
+	generated_monster.visible=menu or model.phase in ["battle","defeat"]
 	hit_flash = maxf(0.0, hit_flash - delta * 2.0)
 	fx_time=maxf(0.0,fx_time-delta)
-	enemy_flash=maxf(0.0,enemy_flash-delta*2)
+	enemy_flash=maxf(0.0,enemy_flash-delta)
+	combat_feedback.queue_redraw()
 	for i in range(actors.size()):
 		var actor: Node2D=actors[i]
-		actor.visible=not menu and model.phase=="battle"
-		actor.position=party_feet[i]
+		actor.visible=not menu and model.phase in ["battle","victory"]
+		actor.position=victory_feet[i] if model.phase=="victory" and not menu else party_feet[i]
+		actor.facing="down" if model.phase=="victory" and not menu else "right"
+		actor.scale=Vector2(1.8,1.8) if model.phase=="victory" and not menu else Vector2(1.25,1.25)
 		if actor.visible and model.heroes.size()==3:
 			if model.heroes[i].hp<=0 and actor.state!="death": actor.play_state("death",true)
 			elif model.heroes[i].hp>0 and actor.state=="death": actor.play_state("idle",true)
@@ -86,6 +100,18 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var key: int = event.keycode
+	if not confirmation.is_empty():
+		if key == KEY_ESCAPE:
+			confirmation = ""
+			refresh()
+		elif key == KEY_ENTER:
+			confirm_action()
+		return
+	if build_open:
+		if key == KEY_ESCAPE or key == KEY_B:
+			build_open = false
+			refresh()
+		return
 	if key == KEY_V:
 		get_tree().change_scene_to_file("res://character_studio.tscn")
 	elif key == KEY_H:
@@ -94,10 +120,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	elif key == KEY_M:
 		muted = not muted
 		refresh()
+	elif key == KEY_B and not model.run.is_empty():
+		build_open = true
+		refresh()
 	elif key == KEY_ESCAPE:
 		if help_open:
 			help_open = false
-		else:
+		elif not model.heroes.is_empty() and model.phase != "title":
 			menu = not menu
 		refresh()
 	elif not menu and not help_open and model.phase == "battle":
@@ -108,13 +137,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			var keys: Array = [KEY_Q, KEY_W, KEY_E, KEY_R]
 			perform(keys.find(key))
 		elif key == KEY_UP:
-			selected_part = (selected_part + 2) % 3
-			refresh()
+			cycle_part(-1)
 		elif key == KEY_DOWN:
-			selected_part = (selected_part + 1) % 3
-			refresh()
+			cycle_part(1)
 		elif key == KEY_SPACE:
-			finish_round()
+			request_end_round()
 
 func box(rect: Rect2, color: Color, border: Color = Color.TRANSPARENT) -> void:
 	draw_style_box(style(color, border), rect)
@@ -209,12 +236,16 @@ func refresh() -> void:
 			"victory", "defeat": show_ending()
 	if help_open:
 		show_help()
+	if build_open:
+		show_build()
+	if not confirmation.is_empty():
+		show_confirmation()
 
 func show_menu() -> void:
 	label_at("THE GODS LEFT THEIR CROWNS.", Vector2(70, 192), 18, TEAL)
 	label_at("We learned\nto break them.", Vector2(65, 233), 62, PALE)
 	paragraph("Three wanderers. Nine crossings. One hollow throne.\nRead the omen. Break a defense. Sever the source of its power.", Vector2(72, 405), 620, 21)
-	button("BEGIN A NEW CYCLE", Rect2(72, 525, 330, 62), begin_run, true)
+	button("BEGIN A NEW CYCLE", Rect2(72, 525, 330, 62), request_new_cycle, true)
 	if not model.heroes.is_empty():
 		button("RESUME CURRENT JOURNEY", Rect2(72, 601, 330, 52), func(): menu = false; refresh())
 	label_at("LEGACY  /  %d ASH" % model.meta.get("essence",0), Vector2(72, 685), 19, GOLD)
@@ -226,12 +257,48 @@ func show_menu() -> void:
 	label_at(message if not message.is_empty() else "Original tactical roguelite • mouse or keyboard • no time pressure", Vector2(72, 820), 15, Color("91a6a7"))
 
 func begin_run() -> void:
+	confirmation = ""
+	build_open = false
 	model.new_run(int(Time.get_unix_time_from_system()) % 1000000)
 	menu = false
 	selected_hero = 0
 	selected_part = 0
 	message = ""
 	refresh()
+
+func request_new_cycle() -> void:
+	if not model.run.is_empty() and model.phase not in ["title", "victory", "defeat"]:
+		confirmation = "new_cycle"
+		refresh()
+	else:
+		begin_run()
+
+func request_end_round() -> void:
+	if model.phase != "battle": return
+	if model.actions_remaining() > 0:
+		confirmation = "end_round"
+		refresh()
+	else:
+		finish_round()
+
+func confirm_action() -> void:
+	var pending: String = confirmation
+	confirmation = ""
+	if pending == "new_cycle": begin_run()
+	elif pending == "end_round": finish_round()
+
+func show_confirmation() -> void:
+	var blocker = ColorRect.new()
+	blocker.color = Color(0,0,0,0.78)
+	blocker.size = Vector2(1440,900)
+	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(blocker)
+	panel_at(Rect2(370,260,700,350))
+	var is_round: bool = confirmation == "end_round"
+	label_at("%d HEROES CAN STILL ACT" % model.actions_remaining() if is_round else "LEAVE THIS JOURNEY?",Vector2(404,293),29,GOLD,640)
+	paragraph("Ending now gives up their remaining actions and resolves the omen. You can still attack or defend first." if is_round else "Starting again replaces this journey. Your %d unbanked ash will be lost. Your existing legacy upgrades and banked ash stay with you." % model.run.get("essence",0),Vector2(406,355),615,22)
+	button("ESC / KEEP PLAYING",Rect2(405,513,295,62),func(): confirmation=""; refresh(),true)
+	button("ENTER / END ROUND" if is_round else "ENTER / NEW CYCLE",Rect2(718,513,314,62),confirm_action)
 
 func upgrade(key: String) -> void:
 	var success: bool = model.buy_upgrade(key)
@@ -242,18 +309,28 @@ func show_battle() -> void:
 	label_at("%02d  /  %s" % [int(model.run.get("node",0))+1, model.boss.get("name", "The Uncrowned")], Vector2(40, 104), 28, PALE)
 	label_at("ROUND %d  /  %d ACTIONS LEFT" % [model.round_number, model.actions_remaining()], Vector2(40, 145), 15, TEAL)
 	label_at("TITAN  %d / %d" % [model.boss.get("hp",0), model.boss.get("max_hp",0)], Vector2(530, 103), 15, GOLD)
-	paragraph("OMEN  /  " + model.intent.get("name", "Waiting"), Vector2(40, 195), 330, 23, GOLD)
-	paragraph(model.intent.get("description", ""), Vector2(40, 239), 300, 18)
-	label_at("1  CHOOSE HERO    2  TARGET A PART    3  USE A SKILL", Vector2(40, 553), 14, TEAL)
+	var threat: Dictionary = model.preview_intent()
+	var omen_color: Color = TEAL if threat.status == "cancelled" else (GOLD if threat.status == "staggered" else Color("efa080"))
+	show_omen(threat)
+	label_at("HERO > PART > SKILL   /   DAMAGE FORECAST: PART HP", Vector2(40, 553), 14, TEAL)
 	for i in range(model.parts.size()):
 		var p: Dictionary = model.parts[i]
 		var status: String = "SEVERED" if p.get("severed",false) else ("BROKEN" if p.get("broken",false) else "SHIELD %d" % p.get("shield",0))
 		var t: String = "%s · %s\n%s  |  HP %d/%d\nWeak: %s" % [str(p.get("level","")), p.get("name",""), status, p.get("hp",0), p.get("max_hp",0), str(p.get("weakness",""))]
 		var b = button(t, Rect2(1080, 183+i*119, 320, 104), select_part.bind(i), i == selected_part, p.get("severed",false))
 		b.add_theme_font_size_override("font_size", 17)
+		b.tooltip_text = "Severing removes %s from future rounds." % p.get("move","")
+		for attack_index in range(threat.attacks.size()):
+			var attack: Dictionary = threat.attacks[attack_index]
+			if i == int(attack.part) and not p.severed:
+				label_at(str(attack_index+1),Vector2(1088,185+i*119),16,omen_color,20)
+				b.tooltip_text = "OMEN %d / %s\n%s" % [attack_index+1,attack.name,attack.counterplay]
+	var build_button = button("B / VIEW BUILD",Rect2(1080,538,320,36),func(): build_open=true; refresh())
+	build_button.add_theme_font_size_override("font_size",14)
 	for i in range(model.heroes.size()):
 		var h: Dictionary = model.heroes[i]
-		var t: String = "%d  %s  /  %s\nHP %d/%d   MP %d/%d  %s" % [i+1, h.get("name",""), h.get("role",""), h.get("hp",0), h.get("max_hp",0), h.get("mp",0), h.get("max_mp",0), "ACTED" if h.get("acted",false) else "READY"]
+		var state: String = "FALLEN" if h.hp<=0 else ("GUARD" if h.guard else ("ACTED" if h.acted else "READY"))
+		var t: String = "%d  %s  /  %s\nHP %d/%d   MP %d/%d  %s" % [i+1, h.get("name",""), h.get("role",""), h.get("hp",0), h.get("max_hp",0), h.get("mp",0), h.get("max_mp",0), state]
 		var hero_button=button(t, Rect2(40+i*455, 592, 440, 84), select_hero.bind(i), i == selected_hero, h.get("hp",0)<=0)
 		var portrait=AtlasTexture.new()
 		portrait.atlas=ActorArt.TEXTURE
@@ -262,24 +339,74 @@ func show_battle() -> void:
 		hero_button.expand_icon=true
 		hero_button.add_theme_constant_override("icon_max_width",42)
 		meter(Rect2(99+i*455,662,170,4),float(h.hp)/maxf(1,float(h.max_hp)),Color("a7c48e"))
+		var loss: int = threat.losses[i]
+		if loss > 0:
+			var forecast = ColorRect.new()
+			forecast.position = Vector2(99+i*455+170*float(h.hp-loss)/h.max_hp,662)
+			forecast.size = Vector2(170*float(loss)/h.max_hp,4)
+			forecast.color = Color("f18d71")
+			forecast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			ui.add_child(forecast)
 		meter(Rect2(280+i*455,662,177,4),float(h.mp)/maxf(1,float(h.max_mp)),Color("79b6bf"))
 	var hero: Dictionary = model.heroes[selected_hero]
 	var skills: Array = hero.get("skills",[])
 	for i in range(skills.size()):
 		var skill: Dictionary = skills[i]
 		var keys: Array = ["Q", "W", "E", "R"]
-		var b = button("%s  %s\n%s  ·  %d MP" % [keys[i], skill.get("name",""), skill.get("type","").to_upper(), skill.get("cost",0)], Rect2(40+i*250, 697, 235, 68), perform.bind(i), false, hero.get("acted",false) or hero.get("hp",0)<=0 or hero.get("mp",0)<skill.get("cost",0))
-		b.tooltip_text = skill.get("description","")
+		var prediction: Dictionary = model.preview_action(selected_hero,i,selected_part)
+		var summary: String = prediction.get("summary", "NO TARGET")
+		if prediction.get("guard",false) and not prediction.get("wards",[]).is_empty():
+			summary = "WARD RITE / +%d HP" % prediction.get("heal",0)
+		var b = button("%s  %s\n%s · %d MP\n%s" % [keys[i], skill.get("name",""), skill.get("type","").to_upper(), skill.get("cost",0),summary], Rect2(40+i*250, 689, 235, 88), perform.bind(i), false, not prediction.get("valid",false))
+		b.add_theme_font_size_override("font_size",16)
+		b.tooltip_text = skill.get("description","") + ("\nForecast: %d titan HP, including any sever rupture. Part damage is shown on the button." % prediction.get("titan_damage",0) if not prediction.get("guard",false) else "\nDefend halves normal attacks and cancels a wardable rite targeting this hero. The live omen updates after Defend.")
 		var icon_path: String="res://assets/ui/"+skill.get("type","slash")+".png"
 		if ResourceLoader.exists(icon_path):
 			b.icon=load(icon_path)
 			b.expand_icon=true
 			b.add_theme_constant_override("icon_max_width",22)
-	button("SPACE\nEND ROUND", Rect2(1060, 697, 340, 68), finish_round, true)
+	button("SPACE / END ROUND\n" + ("OMEN CANCELLED" if threat.status == "cancelled" else "RESOLVE OMEN"), Rect2(1060, 689, 340, 88), request_end_round, true)
 	var lines: Array = model.log.slice(maxi(0,model.log.size()-3))
-	paragraph("\n".join(lines), Vector2(42, 790), 1320, 16, Color("adc0bd"))
+	paragraph("\n".join(lines), Vector2(42, 797), 1320, 16, Color("adc0bd"))
 	if not message.is_empty():
-		label_at(message, Vector2(40, 505), 17, GOLD)
+		label_at(message, Vector2(420, 170), 16, GOLD,620)
+
+func omen_shade(status: String) -> Color:
+	if status in ["cancelled","warded","missed"]: return TEAL
+	return GOLD if status == "staggered" else Color("efa080")
+
+func show_omen(threat: Dictionary) -> void:
+	var attacks: Array=threat.get("attacks",[])
+	var rhythm: Dictionary=threat.get("rhythm",{})
+	var heading: String=str(rhythm.get("name",threat.status)).to_upper()
+	label_at("OMEN / " + heading,Vector2(40,189),16,omen_shade(threat.status),295)
+	if attacks.size()<=1:
+		paragraph(model.intent.get("name","Waiting"),Vector2(40,217),300,24,PALE)
+		paragraph(threat.source + " / " + str(threat.status).to_upper(),Vector2(40,257),287,15,TEAL)
+		paragraph(threat.description,Vector2(40,301),287,18,omen_shade(threat.status))
+		var hint: String = "Sever this source to cancel its attack." if threat.status=="staggered" else ("The party is safe this round." if threat.status in ["cancelled","warded","missed"] else "Break this source to halve its attack.")
+		if not rhythm.is_empty(): hint=str(rhythm.description)
+		paragraph(hint,Vector2(40,410),287,15,Color("b0c1bc"))
+		return
+	for i in range(attacks.size()):
+		var attack: Dictionary=attacks[i]
+		var y: int=226+i*144
+		label_at("%d / %s" % [i+1,attack.name],Vector2(40,y),20,PALE,290)
+		label_at(str(attack.source)+" / "+str(attack.status).to_upper(),Vector2(40,y+28),14,omen_shade(attack.status),290)
+		var loss_text: Array[String]=[]
+		for h in attack.targets:
+			var detail: String="%s -%d HP" % [model.heroes[h].name,attack.losses[h]]
+			if attack.focus_losses[h]>0: detail+=" / -%d MP" % attack.focus_losses[h]
+			loss_text.append(detail)
+		var result: String="\n".join(loss_text)
+		if attack.status=="cancelled": result="SEVERED / NO ATTACK"
+		elif attack.status=="warded": result="0 HP / 0 FOCUS (DEFEND)"
+		elif attack.status=="missed": result="NO LIVING TARGET"
+		paragraph(result,Vector2(40,y+51),286,16,omen_shade(attack.status))
+		if attack.wardable:
+			var counter: String="%s: DEFEND CANCELS THIS RITE" % model.heroes[attack.targets[0]].name.to_upper()
+			paragraph(counter,Vector2(40,y+87),286,14,TEAL)
+	label_at("NEXT / "+str(rhythm.get("next","Read the next omen")),Vector2(40,495),14,GOLD,295)
 
 func select_hero(index: int) -> void:
 	selected_hero = index
@@ -289,6 +416,26 @@ func select_hero(index: int) -> void:
 func select_part(index: int) -> void:
 	selected_part = index
 	message = ""
+	refresh()
+
+func restore_battle_selection() -> void:
+	if model.phase != "battle": return
+	for i in range(model.parts.size()):
+		if not model.parts[i].severed:
+			selected_part=i
+			break
+	for i in range(model.heroes.size()):
+		if model.heroes[i].hp>0:
+			selected_hero=i
+			if not model.heroes[i].acted: break
+
+func cycle_part(direction: int) -> void:
+	for offset in range(1,model.parts.size()+1):
+		var candidate: int=posmod(selected_part+direction*offset,model.parts.size())
+		if not model.parts[candidate].severed:
+			selected_part=candidate
+			break
+	message=""
 	refresh()
 
 func perform(index: int) -> void:
@@ -320,20 +467,47 @@ func perform(index: int) -> void:
 	refresh()
 
 func finish_round() -> void:
-	enemy_flash=0.7
+	if model.phase != "battle": return
+	confirmation = ""
+	var forecast: Dictionary = model.preview_intent()
+	enemy_source = int(model.intent.get("part",0))
+	enemy_wards=[false,false,false]
+	for attack in forecast.attacks:
+		if attack.status=="warded":
+			for h in attack.targets: enemy_wards[h]=true
+	enemy_flash=1.1
 	var before: Array[int]=[]
 	for hero in model.heroes:before.append(hero.hp)
 	model.end_round()
 	for i in range(mini(actors.size(),model.heroes.size())):
+		enemy_losses[i] = int(forecast.losses[i])
 		if model.heroes[i].hp<=0:actors[i].play_state("death",true)
-		elif model.heroes[i].hp<before[i]:actors[i].play_state("hurt",true)
-	tone(70,0.2)
+		elif enemy_losses[i]>0:actors[i].play_state("hurt",true)
+	tone(320 if forecast.status in ["cancelled","warded","missed"] else 70,0.2)
 	selected_hero = 0
 	for i in range(model.heroes.size()):
 		if model.heroes[i].get("hp",0)>0:
 			selected_hero = i
 			break
 	refresh()
+
+func draw_enemy_feedback() -> void:
+	if enemy_flash <= 0.0 or menu or model.phase != "battle": return
+	var alpha: float = clampf(enemy_flash*2.0,0,1)
+	var rise: float = (1.1-enemy_flash)*40.0
+	for i in range(3):
+		if enemy_wards[i]:
+			combat_feedback.draw_string(font,party_feet[i]+Vector2(-26,-117-rise),"WARD",HORIZONTAL_ALIGNMENT_LEFT,-1,24,Color(0.48,0.84,0.77,alpha))
+		if enemy_losses[i] <= 0: continue
+		var point: Vector2 = party_feet[i]+Vector2(0,-55)
+		var color: Color = Color(1.0,0.48,0.34,alpha)
+		if enemy_source == 0:
+			combat_feedback.draw_arc(party_feet[i]+Vector2(0,-4),24+rise*0.7,PI,TAU,20,color,3)
+		elif enemy_source == 1:
+			combat_feedback.draw_line(point+Vector2(25,-24),point+Vector2(-18,18),color,5)
+		else:
+			combat_feedback.draw_arc(point,28+rise*0.3,0,TAU,24,Color(0.74,0.60,1.0,alpha),3)
+		combat_feedback.draw_string(font,point+Vector2(-17,-45-rise),"-%d" % enemy_losses[i],HORIZONTAL_ALIGNMENT_LEFT,-1,27,color)
 
 func show_map() -> void:
 	panel_at(Rect2(45,110,1350,190))
@@ -355,6 +529,7 @@ func travel(index: int) -> void:
 	model.travel(index)
 	selected_part = 0
 	selected_hero = 0
+	restore_battle_selection()
 	message = ""
 	refresh()
 
@@ -407,7 +582,9 @@ func party_summary(y: int) -> void:
 	var names: Array[String]=[]
 	for relic in model.run.get("relics",[]):
 		names.append(relic.get("name","Relic"))
-	paragraph("RELICS / " + (", ".join(names) if not names.is_empty() else "None yet"), Vector2(65,y+90),1300,15,Color("c5cebc"))
+	paragraph("RELICS / " + (", ".join(names) if not names.is_empty() else "None yet"), Vector2(65,y+90),1000,15,Color("c5cebc"))
+	var build_button = button("B / VIEW BUILD",Rect2(1120,y+86,235,36),func(): build_open=true; refresh())
+	build_button.add_theme_font_size_override("font_size",14)
 
 func panel_at(rect: Rect2) -> void:
 	var panel=Panel.new()
@@ -419,9 +596,11 @@ func panel_at(rect: Rect2) -> void:
 
 func show_ending() -> void:
 	var won: bool = model.phase == "victory"
+	panel_at(Rect2(45,165,820,500))
 	label_at("THE CROWN IS SILENT" if won else "THE ASH REMEMBERS", Vector2(65, 210), 50, GOLD)
 	paragraph("The wanderers leave the throne empty. Beyond the mist, another road begins." if won else "Your journey ends here. Its lessons remain. Spend your ash on a lasting legacy, then return stronger.", Vector2(70,310),650,25)
 	label_at("Titans overcome: %d   •   Karma: %+d" % [model.run.get("bosses_defeated",0),model.run.get("karma",0)],Vector2(70,445),22,TEAL)
+	label_at("ASH RECOVERED  +%d  /  VAULT  %d" % [model.run.get("essence",0),model.meta.get("essence",0)],Vector2(70,487),20,GOLD,740)
 	button("RETURN TO THE EMBER",Rect2(70,550,350,68),func(): menu=true; refresh(),true)
 
 func show_help() -> void:
@@ -436,8 +615,27 @@ func show_help() -> void:
 	panel.add_theme_stylebox_override("panel",style(Color("101c24"),GOLD))
 	ui.add_child(panel)
 	label_at("THE ART OF UNMAKING",Vector2(285,135),32,GOLD)
-	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves the visible omen.\n5. Guard to reduce damage and conserve strength. MP recovers each round.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • V character studio • H guide • M sound • Esc menu\n\nThere are no timers. Hover a skill for its detailed effect.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,21)
+	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves every visible omen.\n5. Defend halves normal damage and cancels a wardable rite marked on that hero.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • B build / relics • V studio • H guide • M sound • Esc menu\n\nThere are no timers. Skill buttons predict damage and break/sever.\nThe omen updates after break, sever and guard. B shows relic effects.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,21)
 	button("CLOSE GUIDE",Rect2(855,716,285,50),func(): help_open=false; refresh(),true)
+
+func show_build() -> void:
+	var blocker = ColorRect.new()
+	blocker.color = Color(0,0,0,0.78)
+	blocker.size = Vector2(1440,900)
+	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(blocker)
+	panel_at(Rect2(255,110,930,700))
+	label_at("MEMORIES OF THIS JOURNEY",Vector2(290,139),30,GOLD,840)
+	paragraph("ASH / %d banked · %d earned this journey\nEarned ash is banked on victory or defeat. Starting a new cycle abandons it.\nTEMPERED WEAPONS / +%d damage to every attack" % [model.meta.get("essence",0),model.run.get("essence",0),model.run.get("damage_bonus",0)],Vector2(292,193),830,18,PALE)
+	var relics: Array=model.run.get("relics",[])
+	if relics.is_empty():
+		paragraph("No relics yet. Win battles or visit a shrine to shape this build.",Vector2(292,319),830,22,TEAL)
+	for i in range(relics.size()):
+		var relic: Dictionary=relics[i]
+		label_at(relic.get("name","Relic"),Vector2(292,311+i*70),22,TEAL,830)
+		label_at(relic.get("description",""),Vector2(292,341+i*70),17,PALE,830)
+	label_at("Attack relics are included in damage forecasts. Hollow Bell heals after enemy attacks.",Vector2(292,685),16,Color("a9b9b4"),830)
+	button("B / ESC / RETURN",Rect2(820,734,322,48),func(): build_open=false; refresh(),true)
 
 func tone(frequency: float, duration: float) -> void:
 	if muted:
@@ -496,7 +694,7 @@ func _draw() -> void:
 				draw_set_transform(Vector2.ZERO)
 		draw_combat_fx()
 		box(Rect2(25,578,1390,303),Color(0.03,0.07,0.1,0.94),Color("39484c"))
-		box(Rect2(25,175,320,306),Color(0.03,0.07,0.1,0.8))
+		box(Rect2(25,175,320,353),Color(0.03,0.07,0.1,0.88))
 		var hp: float = float(model.boss.get("hp",1))/maxf(1,float(model.boss.get("max_hp",1)))
 		draw_rect(Rect2(530,135,490,6),Color("3b4545"))
 		draw_rect(Rect2(530,135,490*hp,6),GOLD)
@@ -522,8 +720,11 @@ func _draw() -> void:
 		var vignette_key: String=model.phase
 		if vignette_key in vignettes:
 			draw_texture_rect(vignettes[vignette_key],Rect2(900,104,512,384),false)
-		elif model.phase in ["victory","defeat"]:
+		elif model.phase == "defeat":
 			draw_titan(Vector2(1080,510),0.7)
+		elif model.phase == "victory":
+			for feet in victory_feet:
+				draw_ellipse_shadow(feet)
 	box(Rect2(0,0,1440,87),Color(0.035,0.065,0.09,0.95))
 	draw_line(Vector2(35,86),Vector2(1405,86),Color("45504c"),1)
 
@@ -603,7 +804,7 @@ func draw_titan(origin: Vector2, scale_factor: float) -> void:
 	var variant: int=0
 	var cut: Array=[false,false,false]
 	var target: int=-1
-	if not menu and model.phase=="battle":
+	if not menu and model.phase in ["battle","defeat"]:
 		variant=clampi(int(model.boss.get("tier",1))-1,0,2)
 		if model.boss.get("name","")=="The Bellkeeper": variant=1
 		for i in range(mini(3,model.parts.size())):

@@ -1,0 +1,155 @@
+{
+  "project": "Ashen Oath",
+  "audited_commit": "e3fdfbe328e1b73c9bd2803b14ac8e31cc688e0d",
+  "model_sha256": "98cb81756f86936eab929eb41678f09c5cf977941d8b9ca712b2dced54446fb8",
+  "engine": "Godot 4.6.3 stable official",
+  "method": {
+    "kind": "deterministic headless rules simulation, not human play or visual QA",
+    "seed_range": [
+      1001,
+      1100
+    ],
+    "runs_per_strategy": 100,
+    "route": "Choose every battle/boss when offered; otherwise first branch.",
+    "events": "First option, falling back to second if unaffordable. Camps rest, shrine takes relic, pilgrim shelters.",
+    "legacy": "All ranks zero unless strategy starts max_legacy; those have all ranks five.",
+    "combat_order": "Hero indices 0, 1, 2, then end round; never skip a living hero.",
+    "basic_focus": "Free basic attack only, first intact part, no adaptive targeting.",
+    "break_finish": "First intact part. Skill 1 while shielded if affordable; skill 2 while broken if affordable; otherwise free skill 0. No adaptation to omen or specific weakness.",
+    "random": "Uniformly random intact target and affordable skill including Defend, separate RNG seeded by campaign seed.",
+    "basic_spread": "Free skill 0, intact target indexed by hero_index modulo count.",
+    "rewards": "heal = Mend the oath at every reward; tribute = Take the tribute at every reward.",
+    "average_final_hp": "Sum of all three hero HP at victory/defeat, divided by number of runs; includes final reward healing.",
+    "average_rounds": "Mean last round_number among won battles only; losses excluded from this metric."
+  },
+  "results": [
+    {
+      "strategy": "basic_focus_heal",
+      "wins": 82,
+      "runs": 100,
+      "average_final_party_hp": 95.94,
+      "average_rounds_per_won_battle": 5.06379310344828,
+      "average_banked_essence": null,
+      "average_final_gold": null
+    },
+    {
+      "strategy": "basic_focus_tribute",
+      "wins": 17,
+      "runs": 100,
+      "average_final_party_hp": 8.43,
+      "average_rounds_per_won_battle": 4.75485436893204,
+      "average_banked_essence": null,
+      "average_final_gold": null
+    },
+    {
+      "strategy": "break_finish_heal",
+      "wins": 100,
+      "runs": 100,
+      "average_final_party_hp": 206.0,
+      "average_rounds_per_won_battle": 3.14548494983278,
+      "average_banked_essence": 60.6,
+      "average_final_gold": 189.06
+    },
+    {
+      "strategy": "break_finish_tribute",
+      "wins": 86,
+      "runs": 100,
+      "average_final_party_hp": 104.15,
+      "average_rounds_per_won_battle": 3.63184931506849,
+      "average_banked_essence": 69.2,
+      "average_final_gold": 330.02
+    },
+    {
+      "strategy": "random_heal",
+      "wins": 100,
+      "runs": 100,
+      "average_final_party_hp": 169.63,
+      "average_rounds_per_won_battle": 5.49665551839465,
+      "average_banked_essence": 60.6,
+      "average_final_gold": 189.06
+    },
+    {
+      "strategy": "random_tribute",
+      "wins": 51,
+      "runs": 100,
+      "average_final_party_hp": 41.23,
+      "average_rounds_per_won_battle": 5.4859437751004,
+      "average_banked_essence": 55.14,
+      "average_final_gold": 279.0
+    },
+    {
+      "strategy": "basic_spread_heal",
+      "wins": 76,
+      "runs": 100,
+      "average_final_party_hp": 90.36,
+      "average_rounds_per_won_battle": 5.49825783972125,
+      "average_banked_essence": 55.32,
+      "average_final_gold": 180.42
+    },
+    {
+      "strategy": "max_legacy_basic_tribute",
+      "wins": 87,
+      "runs": 100,
+      "average_final_party_hp": 105.22,
+      "average_rounds_per_won_battle": 3.47350427350427,
+      "average_banked_essence": 69.44,
+      "average_final_gold": 330.63
+    },
+    {
+      "strategy": "max_legacy_break_tribute",
+      "wins": 100,
+      "runs": 100,
+      "average_final_party_hp": 234.66,
+      "average_rounds_per_won_battle": 2.46488294314381,
+      "average_banked_essence": 72.56,
+      "average_final_gold": 338.56
+    }
+  ],
+  "first_crossing_restart_farm": {
+    "noncombat_essence_options": 76,
+    "tested_seed_range": [
+      1,
+      100
+    ],
+    "repro": [
+      "new_run(1)",
+      "travel(shrine choice)",
+      "choose_event(1) [offering: 10 gold for 5 essence]",
+      "new_run(1) [banks 5 essence, resets gold to 30 and HP to full]"
+    ],
+    "classification": "Rules work as documented, but abandoning banks noncombat essence and creates an easy legacy-farming loop.",
+    "purchase_limitation": "Upgrades remain blocked during an active phase, even when the menu is visible. Finish/lose the final farming cycle to purchase."
+  },
+  "verified_bugs": [
+    {
+      "issue": "Stale omen after break or sever",
+      "source": "main.gd show_battle; model.gd _prepare_intent / act",
+      "repro": "new_run(42); start_battle(1); act(0,1,0). Legs are broken, intent description says 9 damage; end_round actually deals 4. Add act(1,2,0) before end_round and the source severs, but description still says 9."
+    },
+    {
+      "issue": "Escape from fresh title hides all start/continue actions",
+      "source": "main.gd _unhandled_key_input / refresh",
+      "repro": "No journey in isolated user directory, instantiate main scene and dispatch ESC. menu=false, phase=title, only V/H/M buttons remain."
+    }
+  ],
+  "baseline_checks": {
+    "model_selftest": "78 checks, 0 failures",
+    "resume_selftest": "7 assertions passed"
+  },
+  "repro_scripts": [
+    "balance_review.gd"
+  ],
+  "limitations": [
+    "Only these deterministic policies and 100 seeds tested; not a human difficulty or retention study.",
+    "All final HP values include the last chosen reward; full HP on heal routes does not mean damage was never taken.",
+    "No combat simulation models animation, input errors, save failures, screen readability, audio, or runtime performance.",
+    "The Button/Space focus concern was not reproduced and is excluded as a bug."
+  ],
+  "product_reading": [
+    "Recovery rewards drive outcomes much more strongly than targeting skill for the tested routes; even random legal combat won all 100 seeds when always healing.",
+    "All three bosses share the same three moves with tier-scaled stats and changed weaknesses; no unique encounter mechanic.",
+    "Gold has only camp/event sinks and does not persist; the tested competent healing route ends with about 189 unused gold on average.",
+    "Late tribute gold and duplicate relic conversion are not clearly forecast in current reward cards; relic identities/effects are absent from battle UI."
+  ],
+  "model_sha256_scope": "Committed checkpoint-7 baseline before the checkpoint-8 fixes."
+}

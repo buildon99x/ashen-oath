@@ -1,0 +1,43 @@
+===selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+Full route seed 1: 28 turns/choices, 40 essence, 120 gold
+Full route seed 2: 30 turns/choices, 45 essence, 152 gold
+Full route seed 3: 32 turns/choices, 47 essence, 150 gold
+Full route seed 42: 32 turns/choices, 49 essence, 188 gold
+Full route seed 2607: 28 turns/choices, 40 essence, 128 gold
+Full route seed 999: 33 turns/choices, 52 essence, 182 gold
+ASHEN OATH MODEL: 78 checks; 0 failures
+===ui_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+UI HANDLER TESTS PASSED: 88 (headless, not rendered visual QA)
+===resume_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+RESUME TEST PASSED: 7 assertions, including exact next-round continuity
+===animation_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+ANIMATION TESTS PASSED: 1131 checks (runtime, studio handlers, original atlas pixels)
+===generated_art_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+GENERATED ART: 177 checks; 0 failures
+===tactical_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+TACTICAL FORECAST / SAFEGUARD TESTS PASSED: 770
+===encounter_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+Sequential forecast matrix: 1944 cases
+BOSS COUNTERPLAY MODEL: 22054 checks; 0 failures. Model tests only, not human visual QA.
+===encounter_ui_selftest===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+COUNTERPLAY UI CHECKS PASSED: 122 (headless layout/handlers, not visual QA)
+===campaign_stress===
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+CAMPAIGN STRESS PASSED: 50 seeds, 50 wins, 0 defeats; no hangs or invalid HP/MP. Scripted rules play, not human screen play.

@@ -1,0 +1,3 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+{"banked_ash":136,"gold":174,"hero_hp":[78,62,62],"karma":10,"legacy":{"focus":0,"force":0,"vitality":0},"loaded":true,"node":9,"path":[{"kind":"event","name":"Meet the oathless pilgrim","node":0},{"kind":"camp","name":"Rest at the ember camp","node":1},{"kind":"boss","name":"The Bellkeeper","node":2},{"kind":"relic","name":"Enter the relic shrine","node":3},{"kind":"camp","name":"Rest at the ember camp","node":4},{"kind":"boss","name":"The Veiled Judge","node":5},{"kind":"battle","name":"Hunt a god-fragment","node":6},{"kind":"relic","name":"Enter the relic shrine","node":7},{"kind":"boss","name":"The Pale Sun","node":8}],"phase":"victory","seed":439347}

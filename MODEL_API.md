@@ -6,7 +6,7 @@
 
 All commands below return a boolean. A rejected command leaves gameplay unchanged and sets `last_error`; accepted commands clear it.
 
-- `new_run(seed_value: int = 0)`: reset run-only state and open the first map crossing. A nonzero seed reproduces the campaign, relic draws and target selection. Zero uses the current Unix second. Abandoning an existing run banks its earned essence once.
+- `new_run(seed_value: int = 0)`: reset run-only state and open the first map crossing. A nonzero seed reproduces the campaign, relic draws and target selection. Zero uses the current Unix second. Abandoning an unfinished run forfeits its unbanked essence. Actual defeat and victory bank earnings.
 - `travel(choice_index)`: select one of the current map paths, entering combat, a camp, an event or a relic shrine.
 - `start_battle(tier = 1)`: direct testing/UI helper. Requires an active run and map/battle phase. Tier is clamped to 1–3. Normal `travel` selects whether this is a god-fragment or a milestone boss.
 - `act(hero_index, skill_index, part_index = 0)`: one hero action. Index 3 is Defend and ignores its target. Attack skills require a living hero, unspent action, enough focus and an intact target.
@@ -17,6 +17,9 @@ All commands below return a boolean. A rejected command leaves gameplay unchange
 - `upgrade_cost(key)`: next rank's price, or -1 for an unknown upgrade.
 - `save_meta()` / `load_meta()`: persistent progression only. `meta_path` defaults to `user://ashen_oath_meta.json`. `persist_meta = false` disables automatic saving for tests; explicit save still works.
 - `actions_remaining()`: count living, unspent heroes.
+- `get_intent_attacks()`: ordered primary and optional secondary attack copies.
+- `preview_intent()`: read-only exact sequential incoming HP/focus losses, with per-source `attacks` and `rhythm`; includes source break/sever, guards and fixed targets killed by an earlier attack. Hollow Bell healing and next-round focus regeneration occur afterward.
+- `preview_action(hero_index, skill_index, part_index)`: read-only damage, shield, break/sever and guard forecast; does not spend resources or consume RNG.
 - `has_relic(id)`: test a run relic.
 - `describe()`: return a deep snapshot of all public state, including `round` and `round_number` aliases.
 
@@ -49,7 +52,7 @@ All commands below return a boolean. A rejected command leaves gameplay unchange
 - The low move hits the party; the middle move targets a revealed hero; the high move hits the party and drains unguarded focus. Damage rises after round five to discourage endless stalling
 - Relics stack across the run but never duplicate. Once all five are owned, another relic reward grants 4 essence instead
 - The event option “Seize their supplies” grants 24 gold and costs 2 karma. While karma is negative, each part in the next battle starts with 1 extra shield. Kind event choices and severing can restore karma
-- Earned essence remains a run resource until defeat, victory or explicit restart. Settlement banks it once. Gold, karma, damage bonuses and relics reset on each new run. Persistent upgrades do not reset
+- Earned essence remains a run resource until defeat or victory. Settlement banks it once; explicitly abandoning a journey forfeits it. Gold, karma, damage bonuses and relics reset on each new run. Persistent upgrades do not reset
 - Vitality grants +5 maximum HP to each hero per rank; Force grants +2 attack damage per rank; Focus grants +1 maximum focus per rank
 
 ## Verification
@@ -66,3 +69,9 @@ The self-test covers deterministic seeds, state snapshot isolation, action valid
 
 ## Journey persistence (checkpoint 2)
 `save_resume(path)` writes a versioned, object-free Godot Variant snapshot atomically via a temporary file. `load_resume(path)` validates the envelope and restores the complete run, meta, action state and RNG seed/state. Default path is user://ashen_oath_journey.save. Main UI saves after every accepted choice/render refresh, and resumes from the title screen. `resume_selftest.gd` verifies exact next-round continuity.
+
+## Boss counterplay (checkpoint 9)
+
+Milestone Judge alternates Single Verdict and Split Verdict. On even rounds a distinct second intact source marks one fixed hero for 10 damage. Milestone Pale Sun cycles Gathering Light, Zenith Release and Fading Light. Release adds a distinct 12-damage Solar Brand; recovery halves the primary's prepared base damage. Both extra rites are completely stopped by the marked hero's Defend, independently weakened by their own source break and cancelled by its sever. With one source remaining, no additional rite can form. Bellkeeper and ordinary fragments retain the original single-source rules.
+
+The primary `intent` keys remain compatible. Optional `secondary` and `rhythm` are saved in version-1 snapshots. Old pending attacks are restored unchanged; new rhythms start only when the next round is prepared. See `verification/cp9/ENCOUNTER_RULES.md` for exact ordering, rounding and UI fields.
