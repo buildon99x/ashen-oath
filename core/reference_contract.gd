@@ -42,7 +42,12 @@ static func validate(manifest: Dictionary) -> Dictionary:
 		if not source is Dictionary or source.get("kind","") not in ["target_build_observation","official_complete_rule"]:
 			errors.append(id+": marketing and historical deltas cannot activate a rule.")
 			continue
-		if str(source.get("url","")).is_empty() or str(rule.get("locator","")).is_empty():
+		if source.get("version","")!=TARGET_VERSION:
+			errors.append(id+": evidence source does not establish the target build.")
+			continue
+		var url: Variant=source.get("url",null)
+		var locator: Variant=rule.get("locator",null)
+		if not url is String or not locator is String or url.strip_edges().is_empty() or locator.strip_edges().is_empty():
 			errors.append(id+": no reproducible evidence locator.")
 			continue
 		usable[id]=rule.value.duplicate(true) if rule.value is Array or rule.value is Dictionary else rule.value

@@ -14,7 +14,7 @@ func _initialize() -> void:
 	check(not Contract.require_value(real,"ep.maximum").ok,"missing EP maximum never silently becomes zero or legacy focus")
 	# Synthetic metadata fixture tests the validation boundary only. It is not
 	# a catalog, a game formula or claimed primary evidence.
-	var fixture: Dictionary={"target_version":Contract.TARGET_VERSION,"sources":{"test":{"kind":"official_complete_rule","url":"urn:test-only:synthetic-evidence"}},"rules":{}}
+	var fixture: Dictionary={"target_version":Contract.TARGET_VERSION,"sources":{"test":{"kind":"official_complete_rule","version":Contract.TARGET_VERSION,"url":"urn:test-only:synthetic-evidence"}},"rules":{}}
 	for id in Contract.REQUIRED_RULES:
 		fixture.rules[id]={"status":"verified_rule","target_version":Contract.TARGET_VERSION,"value":0,"source_id":"test","locator":"synthetic validation fixture, not a game observation"}
 	check(Contract.validate(fixture).ok,"structurally complete fixture accepted")
@@ -27,6 +27,17 @@ func _initialize() -> void:
 		var copy: Dictionary=fixture.duplicate(true)
 		copy.rules["ep.maximum"][field]=null if field=="value" else ""
 		check(not Contract.validate(copy).ok,"missing "+field+" rejected")
+	for source_version in ["0.0.19", "", null]:
+		var copy: Dictionary=fixture.duplicate(true)
+		copy.sources.test.version=source_version
+		check(not Contract.validate(copy).ok,"source version must establish target build")
+	for unusable_locator in [null, "   ", 123]:
+		var copy: Dictionary=fixture.duplicate(true)
+		copy.rules["ep.maximum"].locator=unusable_locator
+		check(not Contract.validate(copy).ok,"null, blank, or non-text locator rejected")
+		copy=fixture.duplicate(true)
+		copy.sources.test.url=unusable_locator
+		check(not Contract.validate(copy).ok,"null, blank, or non-text source URL rejected")
 	var wrong: Dictionary=fixture.duplicate(true)
 	wrong.rules["ep.maximum"].target_version="0.0.19"
 	check(not Contract.validate(wrong).ok,"historical build cannot silently satisfy the target")

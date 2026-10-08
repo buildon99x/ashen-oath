@@ -1,6 +1,7 @@
 Phase0 preparation only; reference mechanics equivalence is NOT established.
 Target v0.2.102 required P0 rules remain unresolved. No original-game run has been performed.
 Existing prototype content extraction and all source regression suites pass on official Godot4.7.2.
-15 additional contract checks reject unknown, wrong-version, marketing-only and historical-only activation; they do not prove a game rule correct.
+24 additional contract checks reject unknown, wrong-version, missing-source-version, unusable locators, marketing-only and historical-only activation; they do not prove a game rule correct.
 The legacy source-literal scan includes the extracted file, preserving full Korean coverage.
 No new gameplay, balance, resource value, save-format mapping or release completion is claimed.
+Direct legacy comparison: 60 seeded journeys, 6882 commands, 466 reloads; full state/RNG traces are byte-identical to user main 793ad0d. See legacy-parity.md.
