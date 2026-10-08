@@ -24,5 +24,6 @@ run_test() {
 for test in selftest ui_selftest resume_selftest campaign_stress animation_selftest generated_art_selftest tactical_selftest encounter_selftest encounter_ui_selftest finisher_selftest arena_selftest localization_selftest localized_ui_selftest save_recovery_selftest; do
   run_test "$test" "$test"
 done
+run_test reference_contract_selftest reference_contract_selftest
 run_test save_default_path save_recovery_selftest -- --default-path-only
 printf '\nAll source regression suites passed. Logs: %s\n' "$LOGS"

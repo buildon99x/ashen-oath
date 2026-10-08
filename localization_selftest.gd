@@ -112,7 +112,7 @@ func _test_source_literals() -> void:
 	# are deliberately excluded because these must stay canonical in the model.
 	var literal: RegEx = RegEx.create_from_string('"(?:[^"\\\\]|\\\\.)*"')
 	var prose: RegEx = RegEx.create_from_string("[A-Za-z].* [A-Za-z]")
-	for path: String in ["res://main.gd", "res://model.gd", "res://character_studio.gd"]:
+	for path: String in ["res://main.gd", "res://model.gd", "res://legacy/legacy_content.gd", "res://character_studio.gd"]:
 		var content: String = FileAccess.get_file_as_string(path)
 		for matched: RegExMatch in literal.search_all(content):
 			var decoded: Variant = JSON.parse_string(matched.get_string())

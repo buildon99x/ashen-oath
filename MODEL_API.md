@@ -90,3 +90,7 @@ The primary `intent` keys remain compatible. Optional `secondary` and `rhythm` a
 ## Presentation boundary (checkpoint 10)
 
 The optional 1.15-second finisher belongs to the scene, not the rules model. A successful `act()` that changes battle to reward already awards gold, journey ash and battle counters exactly once. The scene snapshots the pre-hit sever flags for its dissolve, immediately saves the resolved reward, and blocks other inputs until timeout or an explicit skip. Skip never resolves another command. Presentation state is not serialized; loading returns to the same pending reward. No combat, reward or economy values changed in this checkpoint.
+
+## Mechanics-port preparation
+
+Prototype hero/skill/relic definitions now live in `legacy/legacy_content.gd`; their values and serialized identifiers are unchanged. They are explicitly not a verified The Severed Gods catalog. The active `OathModel` is still the previous Ashen rule set. `core/reference_contract.gd` and `rulesets/severed_v0_2_102/evidence.json` track the new reference separately and reject activation while required target-version rules are unresolved. See `docs/porting/PHASE0.md`; Phase 0 is not complete.

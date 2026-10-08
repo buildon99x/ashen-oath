@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "target_game": "The Severed Gods",
+  "target_app_id": 3755930,
+  "target_version": "0.2.102",
+  "target_patch_date": "2026-09-11",
+  "research_date": "2026-10-08",
+  "phase0_complete": false,
+  "sources": {
+    "steam_store": {
+      "kind": "marketing",
+      "url": "https://store.steampowered.com/app/3755930/The_Severed_Gods/",
+      "retrieved_utc": "2026-10-08",
+      "version": "not specified by page"
+    },
+    "target_patch": {
+      "kind": "official_patch_delta",
+      "url": "https://steamcommunity.com/app/3755930/allnews/",
+      "version": "0.2.102",
+      "published": "2026-09-11",
+      "direct_url": "https://steamcommunity.com/games/3755930/announcements/detail/677383425371406818"
+    },
+    "defend_history": {
+      "kind": "historical_patch_delta",
+      "url": "https://steamcommunity.com/app/3755930/allnews/",
+      "version": "0.2.78",
+      "published": "2026-08-21"
+    },
+    "playtest_history": {
+      "kind": "historical_patch_delta",
+      "url": "https://store.steampowered.com/news/posts/?enddate=1778507195&feed=steam_community_announcements",
+      "version": "0.1.137",
+      "published": "2026-05-11"
+    },
+    "itch_earlier": {
+      "kind": "marketing",
+      "url": "https://topeboxgames.itch.io/the-severed-gods",
+      "version": "not specified by page",
+      "retrieved_utc": "2026-10-08"
+    }
+  },
+  "published_facts": [
+    {
+      "id": "ea_marketed_scope",
+      "source_id": "steam_store",
+      "status": "marketing_only",
+      "value": {
+        "heroes": 5,
+        "worlds": 3,
+        "skills_minimum": 100,
+        "relics_minimum": 80
+      }
+    },
+    {
+      "id": "older_itch_scope",
+      "source_id": "itch_earlier",
+      "status": "conflicting_unversioned_marketing",
+      "value": {
+        "heroes": 8,
+        "worlds": 3,
+        "skills_minimum": 80,
+        "relics_minimum": 90
+      }
+    },
+    {
+      "id": "enemy_defense_scaling",
+      "source_id": "target_patch",
+      "status": "published_delta_not_formula",
+      "value": {
+        "normal_before_percent": 35,
+        "normal_after_percent": 25,
+        "cursed_before_percent": 70,
+        "cursed_after_percent": 50
+      },
+      "limitation": "The note does not define its full damage formula or activation conditions."
+    },
+    {
+      "id": "enemy_hp_preview",
+      "source_id": "target_patch",
+      "status": "published_feature",
+      "value": "Enemy HP remains visible and targeting previews HP loss."
+    },
+    {
+      "id": "ep_mouse_adjustment",
+      "source_id": "target_patch",
+      "status": "published_feature",
+      "value": "Mouse-wheel EP adjustment exists; its numeric rules are unspecified."
+    },
+    {
+      "id": "starter_skill_revision",
+      "source_id": "target_patch",
+      "status": "published_change_without_table",
+      "value": [
+        "Swordsman",
+        "Merchant",
+        "Scholar"
+      ]
+    },
+    {
+      "id": "iron_wall_duration",
+      "source_id": "target_patch",
+      "status": "published_correction_not_duration_table",
+      "value": "Guard duration display depends on skill level; a universal two-turn assumption is invalid."
+    },
+    {
+      "id": "defend_mp_historical",
+      "source_id": "defend_history",
+      "status": "historical_not_target_verified",
+      "value": {
+        "before": 10,
+        "after": 15
+      }
+    },
+    {
+      "id": "parry_historical",
+      "source_id": "playtest_history",
+      "status": "historical_not_target_verified",
+      "value": "Successful Parry grants the Hero an action without NPC action; normal counters trigger normal-attack relics."
+    }
+  ],
+  "rules": {
+    "ep.initial": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "ep.maximum": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "ep.gain_schedule": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "ep.spend_and_boost": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "ep.carryover": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "mp.hero_baselines": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "mp.skill_costs": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "mp.recovery_order": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "turn.actor_order": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "turn.action_consumption": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "defend.cost_mitigation_duration": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "parry.success_failure_cost": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "counter.order_targets_triggers": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "targeting.skill_heights": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "targeting.posture_changes": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "break.shield_depletion": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "knockdown.duration_recovery": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "sever.prerequisites_execution": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "sever.post_cut_changes": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "victory.conditions": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "enemy.behavior_selection": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "skills.acquisition_equipment": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "skills.level_transform": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "effects.resolution_order": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "relics.capacity_duplicates": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "relics.trigger_order": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "rewards.sequence": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    },
+    "empower.acquisition_application": {
+      "status": "unresolved",
+      "target_version": "0.2.102",
+      "value": null,
+      "source_id": null,
+      "locator": null
+    }
+  },
+  "content_catalogs": {
+    "heroes": [],
+    "skills": [],
+    "relics": [],
+    "enemies": [],
+    "status": "unresolved: no fabricated catalog entries"
+  },
+  "observed_original_runs": []
+}
