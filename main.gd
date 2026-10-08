@@ -10,8 +10,14 @@ const INK = Color("0e171e")
 const PALE = Color("e4e5db")
 const FINISHER_DURATION: float = 1.15
 const FINISHER_SKIP_RECT = Rect2(1080, 786, 300, 64)
+const REGION_NAMES: Array[String] = ["CINDER FOREST","DROWNED RELIQUARY","PALE THRONE"]
 var model = Model.new()
 var firelit_arena: Texture2D = preload("res://assets/environments/firelit_arena.webp")
+var battle_arenas: Array[Texture2D] = [
+	preload("res://assets/environments/firelit_arena.webp"),
+	preload("res://assets/environments/drowned_reliquary_arena.webp"),
+	preload("res://assets/environments/pale_throne_arena.webp")
+]
 var forest: Texture2D = preload("res://assets/cinder_forest.png")
 var titan_sprites: Array = []
 var generated_monster: Node2D
@@ -105,6 +111,12 @@ func _process(delta: float) -> void:
 
 func finisher_active() -> bool:
 	return finisher_remaining > 0.0
+
+func current_biome() -> int:
+	return clampi(int(model.run.get("node",0))/3,0,2)
+
+func battle_arena_texture() -> Texture2D:
+	return battle_arenas[current_biome()]
 
 func advance_finisher(delta: float) -> void:
 	if not finisher_active(): return
@@ -370,7 +382,7 @@ func upgrade(key: String) -> void:
 
 func show_battle() -> void:
 	label_at("%02d  /  %s" % [int(model.run.get("node",0))+1, model.boss.get("name", "The Uncrowned")], Vector2(40, 104), 28, PALE)
-	label_at("ROUND %d  /  %d ACTIONS LEFT" % [model.round_number, model.actions_remaining()], Vector2(40, 145), 15, TEAL)
+	label_at("ROUND %d  /  %d ACTIONS LEFT  /  %s" % [model.round_number, model.actions_remaining(), REGION_NAMES[current_biome()]], Vector2(40, 145), 15, TEAL)
 	label_at("TITAN  %d / %d" % [model.boss.get("hp",0), model.boss.get("max_hp",0)], Vector2(530, 103), 15, GOLD)
 	var threat: Dictionary = model.preview_intent()
 	var omen_color: Color = TEAL if threat.status == "cancelled" else (GOLD if threat.status == "staggered" else Color("efa080"))
@@ -579,6 +591,7 @@ func draw_enemy_feedback() -> void:
 	var rise: float = (1.1-enemy_flash)*40.0
 	for i in range(3):
 		if enemy_wards[i]:
+			combat_feedback.draw_string_outline(font,party_feet[i]+Vector2(-26,-117-rise),"WARD",HORIZONTAL_ALIGNMENT_LEFT,-1,24,3,Color(0.035,0.06,0.08,alpha))
 			combat_feedback.draw_string(font,party_feet[i]+Vector2(-26,-117-rise),"WARD",HORIZONTAL_ALIGNMENT_LEFT,-1,24,Color(0.48,0.84,0.77,alpha))
 		if enemy_losses[i] <= 0: continue
 		var point: Vector2 = party_feet[i]+Vector2(0,-55)
@@ -589,11 +602,12 @@ func draw_enemy_feedback() -> void:
 			combat_feedback.draw_line(point+Vector2(25,-24),point+Vector2(-18,18),color,5)
 		else:
 			combat_feedback.draw_arc(point,28+rise*0.3,0,TAU,24,Color(0.74,0.60,1.0,alpha),3)
+		combat_feedback.draw_string_outline(font,point+Vector2(-17,-45-rise),"-%d" % enemy_losses[i],HORIZONTAL_ALIGNMENT_LEFT,-1,27,3,Color(0.035,0.06,0.08,alpha))
 		combat_feedback.draw_string(font,point+Vector2(-17,-45-rise),"-%d" % enemy_losses[i],HORIZONTAL_ALIGNMENT_LEFT,-1,27,color)
 
 func show_map() -> void:
 	panel_at(Rect2(45,110,1350,190))
-	label_at("THE PILGRIMAGE / %s" % ["CINDER FOREST","DROWNED RELIQUARY","PALE THRONE"][clampi(int(model.run.get("node",0))/3,0,2)],Vector2(65,124),16,TEAL,1250)
+	label_at("THE PILGRIMAGE / %s" % REGION_NAMES[current_biome()],Vector2(65,124),16,TEAL,1250)
 	label_at(model.title.to_upper(), Vector2(65, 153), 36, PALE,1250)
 	paragraph("Crossing %d of 9. Rest when wounded, gather relics, and choose what kind of memory you leave behind." % (int(model.run.get("node",0))+1), Vector2(65, 211), 1060, 20)
 	label_at("YOUR ROAD",Vector2(65,326),16,GOLD,300)
@@ -756,8 +770,8 @@ func _draw() -> void:
 		var y: float = fmod(i*97.3-clock_time*8+1800,900)
 		draw_circle(Vector2(x,y),1.5,Color(0.8,0.68,0.43,0.2+0.15*sin(clock_time+i)))
 	if environments.size()==3:
-		var biome: int=clampi(int(model.run.get("node",0))/3,0,2)
-		draw_texture_rect(firelit_arena if not menu and (model.phase=="battle" or finisher_active()) else environments[biome],Rect2(0,0,1440,900),false)
+		var biome: int=current_biome()
+		draw_texture_rect(battle_arena_texture() if not menu and (model.phase=="battle" or finisher_active()) else environments[biome],Rect2(0,0,1440,900),false)
 		if menu:
 			draw_rect(Rect2(0,80,680,820),Color(0.035,0.06,0.075,0.65))
 		# soft grounded arena shadow
@@ -781,6 +795,7 @@ func _draw() -> void:
 			draw_ellipse_shadow(party_feet[i])
 			if i==selected_hero:
 				draw_set_transform(party_feet[i],0,Vector2(1,0.3))
+				draw_arc(Vector2.ZERO,32,0,TAU,40,Color("14202a"),5)
 				draw_arc(Vector2.ZERO,32,0,TAU,40,GOLD,2)
 				draw_set_transform(Vector2.ZERO)
 		draw_combat_fx()
@@ -948,6 +963,7 @@ func draw_combat_fx() -> void:
 			var direction: Vector2=Vector2(cos(i*2.4),sin(i*2.4))
 			var distance: float=(progress-0.45)*100
 			draw_line(target+direction*distance,target+direction*(distance+10),Color(color,fx_time),2)
+		draw_string_outline(font,target+Vector2(-12,-20-progress*34),str(fx_damage),HORIZONTAL_ALIGNMENT_LEFT,-1,30,3,Color(0.035,0.06,0.08,clampf(fx_time*1.2,0.0,1.0)))
 		draw_string(font,target+Vector2(-12,-20-progress*34),str(fx_damage),HORIZONTAL_ALIGNMENT_LEFT,-1,30,Color(1,0.86,0.56,fx_time*1.2))
 
 func pixel_frame(variant: String) -> StyleBoxTexture:

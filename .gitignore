@@ -36,3 +36,7 @@ __pycache__/
 
 # Generated editor metadata for verification-only screenshots
 verification/*.import
+verification/**/*.import
+# Verification-only scripts are invoked by path, not resource UID.
+*_selftest.gd.uid
+balance_review.gd.uid

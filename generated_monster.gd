@@ -77,5 +77,6 @@ func _draw_target_ring() -> void:
 	var offsets: Array[Vector2]=[Vector2(0,-52),Vector2(0,-190),Vector2(0,-309)]
 	var sink: float=64.0*render_scale if severed[0] else 0.0
 	var target: Vector2=offsets[selected_part]*render_scale+Vector2(0,sink)
+	_target_ring.draw_arc(target,25*render_scale,elapsed,elapsed+4.9,30,Color("14202a"),5)
 	_target_ring.draw_arc(target,25*render_scale,elapsed,elapsed+4.9,30,Color("e4c383"),2)
 	_target_ring.draw_arc(target,30*render_scale,-elapsed,-elapsed+1.4,12,Color(0.9,0.76,0.50,0.55),1)

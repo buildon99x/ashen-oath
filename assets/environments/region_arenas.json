@@ -1,0 +1,35 @@
+{
+  "checkpoint": 11,
+  "assets": [
+    {
+      "asset": "Drowned Reliquary",
+      "generation": "Built-in image_gen, 2026-10-08",
+      "reference": "firelit_arena.webp (original project-owned camera/style reference)",
+      "source_png_sha256": "df80a0cd41be87c396f4d20bd6c0222dcd7f4cd0144d5912618a0dee106a9ebf",
+      "runtime_file": "drowned_reliquary_arena.webp",
+      "runtime_sha256": "4be3411da3d25612825220863e081e2dd8d0ce0256b154a49487b0e256793124",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "runtime_encoding": "WebP quality90 method6; unchanged dimensions; no crop, recolor, redrawing, compositing, or semantic edits",
+      "prompt_file": "drowned_reliquary_prompt.txt",
+      "scope": "Independently generated region environment; no reference-game assets, characters or UI."
+    },
+    {
+      "asset": "Pale Throne",
+      "generation": "Built-in image_gen, 2026-10-08",
+      "reference": "firelit_arena.webp (original project-owned camera/style reference)",
+      "source_png_sha256": "97567bd3f7d16b3c3cd4d7208c8da6b50c5d7df8e98c5a14eeb3bbb1012df19e",
+      "runtime_file": "pale_throne_arena.webp",
+      "runtime_sha256": "2dfb862deb216ddf649082925948079ce24606373b3f15106ee74c92292f20b7",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "runtime_encoding": "WebP quality90 method6; unchanged dimensions; no crop, recolor, redrawing, compositing, or semantic edits",
+      "prompt_file": "pale_throne_prompt.txt",
+      "scope": "Independently generated region environment; no reference-game assets, characters or UI."
+    }
+  ]
+}
