@@ -8,6 +8,8 @@ const GOLD = Color("d6b77d")
 const TEAL = Color("78c9be")
 const INK = Color("0e171e")
 const PALE = Color("e4e5db")
+const FINISHER_DURATION: float = 1.15
+const FINISHER_SKIP_RECT = Rect2(1080, 786, 300, 64)
 var model = Model.new()
 var firelit_arena: Texture2D = preload("res://assets/environments/firelit_arena.webp")
 var forest: Texture2D = preload("res://assets/cinder_forest.png")
@@ -39,6 +41,10 @@ var enemy_flash: float=0.0
 var enemy_losses: Array[int] = [0,0,0]
 var enemy_source: int = 0
 var enemy_wards: Array[bool] = [false,false,false]
+var finisher_remaining: float = 0.0
+var finisher_cuts: Array = [false,false,false]
+var finisher_action: String = ""
+var finisher_awards: String = ""
 var combat_feedback: Node2D
 var audio: AudioStreamPlayer
 var font: Font = ThemeDB.fallback_font
@@ -80,14 +86,15 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	clock_time += delta
-	generated_monster.visible=menu or model.phase in ["battle","defeat"]
+	advance_finisher(delta)
+	generated_monster.visible=menu or model.phase in ["battle","defeat"] or finisher_active()
 	hit_flash = maxf(0.0, hit_flash - delta * 2.0)
 	fx_time=maxf(0.0,fx_time-delta)
 	enemy_flash=maxf(0.0,enemy_flash-delta)
 	combat_feedback.queue_redraw()
 	for i in range(actors.size()):
 		var actor: Node2D=actors[i]
-		actor.visible=not menu and model.phase in ["battle","victory"]
+		actor.visible=not menu and (model.phase in ["battle","victory"] or finisher_active())
 		actor.position=victory_feet[i] if model.phase=="victory" and not menu else party_feet[i]
 		actor.facing="down" if model.phase=="victory" and not menu else "right"
 		actor.scale=Vector2(1.8,1.8) if model.phase=="victory" and not menu else Vector2(1.25,1.25)
@@ -96,7 +103,52 @@ func _process(delta: float) -> void:
 			elif model.heroes[i].hp>0 and actor.state=="death": actor.play_state("idle",true)
 	queue_redraw()
 
+func finisher_active() -> bool:
+	return finisher_remaining > 0.0
+
+func advance_finisher(delta: float) -> void:
+	if not finisher_active(): return
+	finisher_remaining=maxf(0.0,finisher_remaining-maxf(delta,0.0))
+	if finisher_remaining==0.0:
+		refresh()
+
+func finish_presentation() -> void:
+	if not finisher_active(): return
+	finisher_remaining=0.0
+	refresh()
+
+func show_finisher() -> void:
+	label_at("A GOD IS UNMADE",Vector2(65,128),38,GOLD,1000)
+	label_at(str(model.boss.get("name","The Uncrowned")),Vector2(68,185),25,PALE,1000)
+	label_at(finisher_action+" / FINAL STRIKE",Vector2(68,665),21,TEAL,1290)
+	label_at(finisher_awards,Vector2(68,714),24,PALE,980)
+	label_at("YOUR REWARD IS READY",Vector2(68,807),16,GOLD,850)
+	button("SPACE / ESC / SKIP",FINISHER_SKIP_RECT,finish_presentation,true,false,true)
+
+func draw_finisher_feedback() -> void:
+	var progress: float=1.0-finisher_remaining/FINISHER_DURATION
+	var release: float=clampf((progress-0.22)/0.78,0.0,1.0)
+	if release<=0.0: return
+	for i in range(24):
+		var seed_x: float=sin(float(i)*7.13)*92.0
+		var seed_y: float=fmod(float(i)*53.0,204.0)
+		var point: Vector2=Vector2(865+seed_x,246+seed_y)+Vector2(seed_x*release*0.55,-release*(35+i%5*13))
+		combat_feedback.draw_rect(Rect2(point,Vector2(3,3)),Color(0.83,0.71,0.49,sin(release*PI)*0.85))
+
+func _input(event: InputEvent) -> void:
+	if not finisher_active(): return
+	# The model has already awarded this victory and saved the reward choice.
+	# Consume the skip event before new reward controls exist, including releases.
+	get_viewport().set_input_as_handled()
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_SPACE,KEY_ENTER,KEY_ESCAPE]: finish_presentation()
+	elif event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
+		if FINISHER_SKIP_RECT.has_point(event.position): finish_presentation()
+
 func _unhandled_key_input(event: InputEvent) -> void:
+	if finisher_active():
+		_input(event)
+		return
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var key: int = event.keycode
@@ -183,12 +235,14 @@ func paragraph(text: String, pos: Vector2, width: float, size: int = 18, color: 
 	ui.add_child(l)
 	return l
 
-func button(text: String, rect: Rect2, action: Callable, active: bool = false, disabled: bool = false) -> Button:
+func button(text: String, rect: Rect2, action: Callable, active: bool = false, disabled: bool = false, during_finisher: bool = false) -> Button:
 	var b = Button.new()
 	b.text = wrap_button(text, rect.size.x - 34)
 	b.position = rect.position
 	b.size = rect.size
 	b.disabled = disabled
+	if model.phase == "battle" and not menu and not help_open and not build_open and confirmation.is_empty():
+		b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_size_override("font_size", 18)
 	b.add_theme_font_override("font",font)
 	b.add_theme_color_override("font_color", GOLD if active else PALE)
@@ -196,7 +250,8 @@ func button(text: String, rect: Rect2, action: Callable, active: bool = false, d
 	b.add_theme_stylebox_override("hover", pixel_frame("hover"))
 	b.add_theme_stylebox_override("pressed", pixel_frame("gold"))
 	b.add_theme_stylebox_override("disabled", pixel_frame("disabled"))
-	b.pressed.connect(action)
+	b.pressed.connect(func():
+		if during_finisher or not finisher_active(): action.call())
 	ui.add_child(b)
 	return b
 
@@ -221,6 +276,9 @@ func refresh() -> void:
 		child.queue_free()
 	label_at("A S H E N   O A T H", Vector2(38, 22), 25, GOLD)
 	label_at("THE HOLLOW CROWN", Vector2(40, 55), 12, TEAL)
+	if finisher_active():
+		show_finisher()
+		return
 	button("V  Sprites",Rect2(990,25,120,42),func(): get_tree().change_scene_to_file("res://character_studio.tscn"))
 	button("H  Guide", Rect2(1120, 25, 120, 42), func(): help_open = not help_open; refresh())
 	button("M  " + ("Muted" if muted else "Sound"), Rect2(1250, 25, 150, 42), func(): muted = not muted; refresh())
@@ -257,6 +315,7 @@ func show_menu() -> void:
 	label_at(message if not message.is_empty() else "Original tactical roguelite • mouse or keyboard • no time pressure", Vector2(72, 820), 15, Color("91a6a7"))
 
 func begin_run() -> void:
+	if finisher_active(): return
 	confirmation = ""
 	build_open = false
 	model.new_run(int(Time.get_unix_time_from_system()) % 1000000)
@@ -267,6 +326,7 @@ func begin_run() -> void:
 	refresh()
 
 func request_new_cycle() -> void:
+	if finisher_active(): return
 	if not model.run.is_empty() and model.phase not in ["title", "victory", "defeat"]:
 		confirmation = "new_cycle"
 		refresh()
@@ -274,6 +334,7 @@ func request_new_cycle() -> void:
 		begin_run()
 
 func request_end_round() -> void:
+	if finisher_active(): return
 	if model.phase != "battle": return
 	if model.actions_remaining() > 0:
 		confirmation = "end_round"
@@ -282,6 +343,7 @@ func request_end_round() -> void:
 		finish_round()
 
 func confirm_action() -> void:
+	if finisher_active(): return
 	var pending: String = confirmation
 	confirmation = ""
 	if pending == "new_cycle": begin_run()
@@ -301,6 +363,7 @@ func show_confirmation() -> void:
 	button("ENTER / END ROUND" if is_round else "ENTER / NEW CYCLE",Rect2(718,513,314,62),confirm_action)
 
 func upgrade(key: String) -> void:
+	if finisher_active(): return
 	var success: bool = model.buy_upgrade(key)
 	message = "Legacy strengthened." if success else model.last_error
 	refresh()
@@ -409,11 +472,13 @@ func show_omen(threat: Dictionary) -> void:
 	label_at("NEXT / "+str(rhythm.get("next","Read the next omen")),Vector2(40,495),14,GOLD,295)
 
 func select_hero(index: int) -> void:
+	if finisher_active(): return
 	selected_hero = index
 	message = ""
 	refresh()
 
 func select_part(index: int) -> void:
+	if finisher_active(): return
 	selected_part = index
 	message = ""
 	refresh()
@@ -430,6 +495,7 @@ func restore_battle_selection() -> void:
 			if not model.heroes[i].acted: break
 
 func cycle_part(direction: int) -> void:
+	if finisher_active(): return
 	for offset in range(1,model.parts.size()+1):
 		var candidate: int=posmod(selected_part+direction*offset,model.parts.size())
 		if not model.parts[candidate].severed:
@@ -439,7 +505,13 @@ func cycle_part(direction: int) -> void:
 	refresh()
 
 func perform(index: int) -> void:
+	if finisher_active(): return
 	var before_hp: int=int(model.boss.get("hp",0))
+	var before_gold: int=int(model.run.get("gold",0))
+	var before_ash: int=int(model.run.get("essence",0))
+	var was_battle: bool=model.phase=="battle"
+	var prior_cuts: Array=[]
+	for part in model.parts: prior_cuts.append(bool(part.severed))
 	var actor: int=selected_hero
 	var target: int=selected_part
 	if model.act(selected_hero, index, selected_part):
@@ -453,6 +525,14 @@ func perform(index: int) -> void:
 		hit_flash = 0.6
 		tone(160 + index * 90, 0.12)
 		message = ""
+		if was_battle and model.phase=="reward":
+			finisher_cuts=prior_cuts
+			finisher_remaining=FINISHER_DURATION
+			finisher_action="%s / %s" % [model.heroes[actor].name.to_upper(),model.heroes[actor].skills[index].name.to_upper()]
+			finisher_awards="+%d GOLD / +%d UNBANKED ASH" % [int(model.run.gold)-before_gold,int(model.run.essence)-before_ash]
+			help_open=false
+			build_open=false
+			confirmation=""
 		if model.parts[selected_part].get("severed",false):
 			for j in range(model.parts.size()):
 				if not model.parts[j].get("severed",false):
@@ -467,6 +547,7 @@ func perform(index: int) -> void:
 	refresh()
 
 func finish_round() -> void:
+	if finisher_active(): return
 	if model.phase != "battle": return
 	confirmation = ""
 	var forecast: Dictionary = model.preview_intent()
@@ -492,6 +573,7 @@ func finish_round() -> void:
 	refresh()
 
 func draw_enemy_feedback() -> void:
+	if finisher_active(): draw_finisher_feedback()
 	if enemy_flash <= 0.0 or menu or model.phase != "battle": return
 	var alpha: float = clampf(enemy_flash*2.0,0,1)
 	var rise: float = (1.1-enemy_flash)*40.0
@@ -526,6 +608,7 @@ func show_map() -> void:
 		paragraph(model.log[-1],Vector2(65,866),1300,14,GOLD)
 
 func travel(index: int) -> void:
+	if finisher_active(): return
 	model.travel(index)
 	selected_part = 0
 	selected_hero = 0
@@ -548,11 +631,13 @@ func show_choices(options: Array, title_text: String, description: String, rewar
 		paragraph(message,Vector2(65,446),1280,18,GOLD)
 
 func choose_reward(index: int) -> void:
+	if finisher_active(): return
 	model.choose_reward(index)
 	tone(440,0.2)
 	refresh()
 
 func choose_event(index: int) -> void:
+	if finisher_active(): return
 	if not model.choose_event(index):
 		message=model.last_error
 	else:
@@ -672,16 +757,22 @@ func _draw() -> void:
 		draw_circle(Vector2(x,y),1.5,Color(0.8,0.68,0.43,0.2+0.15*sin(clock_time+i)))
 	if environments.size()==3:
 		var biome: int=clampi(int(model.run.get("node",0))/3,0,2)
-		draw_texture_rect(firelit_arena if not menu and model.phase=="battle" else environments[biome],Rect2(0,0,1440,900),false)
+		draw_texture_rect(firelit_arena if not menu and (model.phase=="battle" or finisher_active()) else environments[biome],Rect2(0,0,1440,900),false)
 		if menu:
 			draw_rect(Rect2(0,80,680,820),Color(0.035,0.06,0.075,0.65))
 		# soft grounded arena shadow
 		for i in range(6):
 			draw_rect(Rect2(0,560+i*9,1440,12),Color(0.03,0.065,0.08,0.07+i*0.03))
-	if not menu and model.phase!="battle":
+	if not menu and model.phase!="battle" and not finisher_active():
 		draw_rect(Rect2(0,87,1440,813),Color(0.02,0.055,0.065,0.38))
 	if menu:
 		draw_titan(Vector2(1020,598),1.15)
+	elif finisher_active():
+		box(Rect2(35,111,1370,116),Color(0.025,0.045,0.07,0.90),Color("596b68"))
+		draw_titan(Vector2(865,525),0.90)
+		for feet in party_feet: draw_ellipse_shadow(feet)
+		draw_combat_fx()
+		box(Rect2(35,638,1370,232),Color(0.03,0.07,0.1,0.94),Color("596b68"))
 	elif model.phase == "battle":
 		box(Rect2(25,100,1000,64),Color(0.025,0.045,0.07,0.88))
 		box(Rect2(25,548,610,25),Color(0.025,0.045,0.07,0.88))
@@ -804,16 +895,21 @@ func draw_titan(origin: Vector2, scale_factor: float) -> void:
 	var variant: int=0
 	var cut: Array=[false,false,false]
 	var target: int=-1
-	if not menu and model.phase in ["battle","defeat"]:
+	if not menu and (model.phase in ["battle","defeat"] or finisher_active()):
 		variant=clampi(int(model.boss.get("tier",1))-1,0,2)
 		if model.boss.get("name","")=="The Bellkeeper": variant=1
 		for i in range(mini(3,model.parts.size())):
 			cut[i]=model.parts[i].get("severed",false)
 		target=selected_part
+	var dissolve: float=0.0
+	if finisher_active():
+		cut=finisher_cuts.duplicate()
+		target=-1
+		dissolve=clampf((1.0-finisher_remaining/FINISHER_DURATION-0.30)/0.70,0.0,1.0)
 	# The generated actor is a separate scene layer, keeping all UI above it.
-	generated_monster.configure(variant,origin,scale_factor,cut,clock_time,hit_flash,target)
+	generated_monster.configure(variant,origin,scale_factor,cut,clock_time,hit_flash,target,dissolve)
 	draw_set_transform(origin,0,Vector2(1,0.22))
-	draw_circle(Vector2.ZERO,125*scale_factor,Color(0,0,0,0.28))
+	draw_circle(Vector2.ZERO,125*scale_factor,Color(0,0,0,0.28*(1.0-dissolve)))
 	draw_set_transform(Vector2.ZERO)
 
 func draw_hero(pos: Vector2,index: int) -> void:
@@ -836,8 +932,9 @@ func draw_combat_fx() -> void:
 	var start: Vector2=party_feet[fx_actor]+Vector2(18,-54)
 	var offsets: Array=[Vector2(0,-52),Vector2(0,-190),Vector2(0,-309)]
 	var target: Vector2=Vector2(865,525)+offsets[fx_part]*0.90
-	if model.parts.size()>0 and model.parts[0].get("severed",false):
-		target.y+=72.0
+	var legs_cut: bool=bool(finisher_cuts[0]) if finisher_active() else (model.parts.size()>0 and model.parts[0].get("severed",false))
+	if legs_cut:
+		target.y+=64.0*0.90
 	var color: Color=TEAL if fx_kind=="arcane" else GOLD
 	if fx_kind=="guard":
 		draw_arc(start+Vector2(-18,10),45,0,TAU,32,Color(0.48,0.78,0.72,fx_time),3)

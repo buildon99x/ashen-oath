@@ -1,0 +1,3 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+
+{"banked_ash":136,"gold":108,"hero_hp":[76,58,62],"karma":10,"legacy":{"focus":0,"force":0,"vitality":0},"loaded":true,"node":6,"path":[{"kind":"battle","name":"Hunt a god-fragment","node":0},{"kind":"camp","name":"Rest at the ember camp","node":1},{"kind":"boss","name":"The Bellkeeper","node":2},{"kind":"relic","name":"Enter the relic shrine","node":3},{"kind":"relic","name":"Enter the relic shrine","node":4},{"kind":"boss","name":"The Veiled Judge","node":5}],"phase":"map","seed":442893}

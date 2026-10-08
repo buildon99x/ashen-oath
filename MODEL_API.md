@@ -75,3 +75,7 @@ The self-test covers deterministic seeds, state snapshot isolation, action valid
 Milestone Judge alternates Single Verdict and Split Verdict. On even rounds a distinct second intact source marks one fixed hero for 10 damage. Milestone Pale Sun cycles Gathering Light, Zenith Release and Fading Light. Release adds a distinct 12-damage Solar Brand; recovery halves the primary's prepared base damage. Both extra rites are completely stopped by the marked hero's Defend, independently weakened by their own source break and cancelled by its sever. With one source remaining, no additional rite can form. Bellkeeper and ordinary fragments retain the original single-source rules.
 
 The primary `intent` keys remain compatible. Optional `secondary` and `rhythm` are saved in version-1 snapshots. Old pending attacks are restored unchanged; new rhythms start only when the next round is prepared. See `verification/cp9/ENCOUNTER_RULES.md` for exact ordering, rounding and UI fields.
+
+## Presentation boundary (checkpoint 10)
+
+The optional 1.15-second finisher belongs to the scene, not the rules model. A successful `act()` that changes battle to reward already awards gold, journey ash and battle counters exactly once. The scene snapshots the pre-hit sever flags for its dissolve, immediately saves the resolved reward, and blocks other inputs until timeout or an explicit skip. Skip never resolves another command. Presentation state is not serialized; loading returns to the same pending reward. No combat, reward or economy values changed in this checkpoint.
