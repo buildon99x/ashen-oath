@@ -1,0 +1,47 @@
+FX M1 and early M3 review, 2026-10-08
+
+BASE
+- User migration 793ad0d2a442e45725ae987d012dcabc9230ea27 is preserved.
+- Compact battle symbols and optional tooltips from CP13 are integrated on the feature branch only.
+- model.gd, project.godot and run-local.bat are byte-identical to user main.
+- Official 4.7.2.stable.official.ed1daf0bf; GL Compatibility, llvmpipe, Dummy audio.
+
+NORMAL INPUT RUN
+1. Launched a dedicated isolated copy of the genuine CP12 Judge round-2 checkpoint.
+2. Resume showed two sources, losses 2/4/4, and Mara's ward against the secondary rite.
+3. Space resolved the sources; screenshot02 caught real first-source damage -2/-4/-4 and the intermediate Focus3/5 before next-round recovery.
+4. Final round-3 state was HP81/62/66, Focus6/4/6 and three actions, exactly as the non-FX engine test.
+5. Mara Sundering Arc severed the exposed crown, Ivo Hollow Hymn broke the arm, Sable Last Mercy severed the final source.
+The early04 wind-up capture exposed a premature gold-header update; the final version reads that header from the same before-impact snapshot.04 is retained as before-fix evidence.
+6. Normal final-strike flow reached the unselected reward: gold123, banked Ash189, HP81/62/66, Focus3/2/3, Karma9. The saved-state log confirms the same result as baseline. No script or shader errors in the native log.
+
+DIAGNOSTIC NATIVE INSPECTION (NOT A CAMPAIGN)
+- Separate scene is labeled FX INSPECTION / diagnostic and never saves its fixtures.
+- At0.317s, pre-impact values remained titan141 and arm shield1/HP36.
+- One 1/60s step crossed the actual actor marker: impact0.000, titan131 and arm shield0/HP26 appeared together.
+- An initial dotted arc was too similar to the target ring. It was enlarged, then reworked as layered contiguous tapered pixels; final capture is a later revision than06–08.
+- Ward in Pale: barrier on Mara, no hit number, HP78 and Focus6 unchanged.
+- Cancelled arm in Pale: source collapse only, no hero hit or number, HP/Focus unchanged.
+- Earlier small-arc captures are retained as iteration evidence, not final visual-quality evidence.
+
+AUTOMATED EVIDENCE
+- Full scripts/test.sh passes on4.7.2, including1,771 new FX checks.
+- Matrix: actual accepted hero before/after deltas, guards, chips, breaks, severs, all9skill identities, copied-state isolation and no combat RNG writes.
+- Real actor marker at4/12s, wrong actor and duplicate marker rejection, short local hitstop, no global time_scale change.
+- Immediate durable reward during lethal wind-up, sequential per-source targets, ward/cancelled/missed/lethal-source cases, Hollow Bell recovery at queue completion.
+- Real viewport Space/Enter/Escape and visible mouse skip press/release at wind-up and lethal impact cannot choose a reward or repeat settlement.
+- Previous scene tests advance actual markers using a test-only helper before checking post-animation UI. Timeline tests independently check both sides of the marker.
+
+REMAINING
+- This is M1 plus basic M3 shape language, not the complete adopted plan.
+- Eight other skill-specific finishes, bespoke flipbook production, richer boss rhythms and final dissolution, persistent accessibility settings, production multi-layer sound and real-device performance remain.
+- Current generic typed effects and sine tone are explicitly provisional. No real audio listening or60fps/P95 claim; no Windows native execution.
+- Initial4.6.3 pin in build tooling is a separately reported migration mismatch, not a failed4.7.2 native run.
+- Five-person blind recognition, normal-speed video comparison and release acceptance remain unperformed.
+
+FINAL NATIVE PASS
+- The final connected/tapered arc was inspected on Cinder, Drowned, and Pale; it stays inside the actor field without covering HUD text.
+- Same-fixture A/B at0.317s: legacy has already removed the arm and changed titan HP141→83; new mode still shows the intact arm and HP141 until the real0.333s impact. This comparison is timing evidence, not a controlled difficulty test.
+- A native mouse click on the visible final-strike Skip button at impact0.000 immediately left three unselected reward choices; no stuck queue.
+- Actual campaign process restart resumed the same Judge reward with gold123, bank189, HP81/62/66, Focus3/2/3. One recovery selection advanced to map with HP83/67/71 and Focus6/5/6.
+- Native runtime was stopped normally after verification; no other project windows were controlled.

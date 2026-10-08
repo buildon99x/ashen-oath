@@ -1,0 +1,6 @@
+Verified bounded M1 + early M3 milestone for draft review on the feature branch.
+All source regression suites pass on official Godot4.7.2, including1771 FX checks.
+Actual Judge combat, single reward, process restart/resume and one reward choice passed.
+Separate labeled native frame-step inspection covers timing A/B, three arenas, Break/Sever/Ward/Cancelled and immediate lethal-impact mouse skip.
+Model, user engine migration and user launcher are unchanged. Main has not been modified by this feature work.
+Remaining adopted-plan gates are documented in combat_fx/README.md and QA_NOTES.txt; this is not a full FX release or commercial-quality claim.

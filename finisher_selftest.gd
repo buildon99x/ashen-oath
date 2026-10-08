@@ -1,4 +1,5 @@
 extends SceneTree
+const FxTest = preload("res://combat_fx/test_helpers.gd")
 const Localization = preload("res://localization.gd")
 ## CP10 deterministic scene/model checks. This is headless evidence, not visual QA.
 ## Run with a fresh writable XDG_DATA_HOME, XDG_CONFIG_HOME and XDG_CACHE_HOME:
@@ -60,6 +61,8 @@ func make_scene():
 	return scene
 
 func start_fixture(scene, tier: int = 1, final_boss: bool = false) -> void:
+	scene.fx_director.clear()
+	scene.fx_pending_finisher.clear()
 	Localization.set_language("en")
 	Localization.save_preferences()
 	scene.apply_language_theme()
@@ -138,15 +141,18 @@ func reward_buttons(scene) -> Array[Button]:
 func hp_kill(scene) -> void:
 	scene.model.boss.hp = 1
 	scene.perform(0)
+	FxTest.settle(scene)
 	check(scene.finisher_active() and scene.model.phase == "reward", "HP kill starts a presentation over an already-resolved reward")
 
 func test_no_false_finishers(scene) -> void:
 	start_fixture(scene)
 	scene.perform(0)
+	FxTest.settle(scene)
 	check(not scene.finisher_active() and scene.model.phase == "battle", "nonlethal hit does not start a finisher")
 	start_fixture(scene)
 	scene.model.boss.hp = 1
 	scene.perform(3)
+	FxTest.settle(scene)
 	check(not scene.finisher_active() and scene.model.phase == "battle", "Defend at 1 boss HP does not start a finisher")
 	check(scene.model.heroes[0].guard, "Defend was accepted")
 	for reason in ["acted", "dead", "focus", "severed", "skill", "hero", "phase"]:
@@ -165,6 +171,7 @@ func test_no_false_finishers(scene) -> void:
 			"phase": scene.model.phase = "map"
 		var before: PackedByteArray = outcome_snapshot(scene.model)
 		scene.perform(skill)
+		FxTest.settle(scene)
 		check(not scene.finisher_active() and not scene.model.last_error.is_empty(), "rejected %s action never starts a finisher" % reason)
 		check(outcome_snapshot(scene.model) == before, "rejected %s action leaves rewards and economy unchanged" % reason)
 	print("FINISHER: nonlethal, guard and rejected-action checks finished")
@@ -186,6 +193,7 @@ func test_kill_paths(scene) -> void:
 		var before_gold: int = scene.model.run.gold
 		var before_ash: int = scene.model.run.essence
 		scene.perform(2)
+		FxTest.settle(scene)
 		check_award_label(scene, before_gold, before_ash, "+24 GOLD / +5 UNBANKED ASH")
 		check(scene.model.boss.hp > 0 and scene.model._intact_parts().is_empty(), "last-part sever wins with positive boss HP: part %d" % target)
 		check(scene.finisher_active() and scene.model.phase == "reward", "last-part sever starts the finisher: part %d" % target)
@@ -225,6 +233,7 @@ func test_kill_paths(scene) -> void:
 	var expected = reference_model(scene.model)
 	check(expected.act(0, 0, 1), "reference HP kill is accepted")
 	scene.perform(0)
+	FxTest.settle(scene)
 	check(scene.model.boss.hp == 0 and not scene.model.parts[1].severed, "HP victory does not require severing the attacked part")
 	check(scene.finisher_cuts == [true, false, false], "HP finisher retains previously severed legs")
 	check(model_snapshot(scene.model) == model_snapshot(expected), "HP kill resolves exactly once before its finisher")
@@ -372,10 +381,12 @@ func test_focused_action_space(scene) -> void:
 		check(expected.act(0, 0, 0), "focused-button reference kill is accepted")
 		if release_timing == "release_kills":
 			root.push_input(key_event(KEY_SPACE, false), true)
+			FxTest.settle(scene)
 		else:
 			# Trigger the action while the old control retains its held Space press.
 			# This isolates post-kill input even if global Space opened a confirmation.
 			scene.perform(0)
+			FxTest.settle(scene)
 		check(scene.finisher_active() and model_snapshot(scene.model) == model_snapshot(expected), "focused-button kill starts exactly one full finisher: " + release_timing)
 		var before: PackedByteArray = model_snapshot(scene.model)
 		var remaining: float = scene.finisher_remaining
@@ -525,6 +536,7 @@ func test_final_settlement(scene) -> void:
 	var before_gold: int = scene.model.run.gold
 	var before_ash: int = scene.model.run.essence
 	scene.perform(0)
+	FxTest.settle(scene)
 	check_award_label(scene, before_gold, before_ash, "+36 GOLD / +12 UNBANKED ASH")
 	check(scene.finisher_active() and scene.model.phase == "reward" and not scene.model._settled, "final boss still offers one reward before victory settlement")
 	check(scene.model.run.bosses_defeated == 3 and scene.model.run.battles_won == 3, "final boss kill increments both counters once")
@@ -565,6 +577,7 @@ func test_defeat_and_shader_reset(scene) -> void:
 		hero.guard = false
 	scene.model.intent = {"name": "Test party wipe", "part": 0, "damage": 100, "targets": [0, 1, 2], "description": "Deterministic defeat fixture."}
 	scene.finish_round()
+	FxTest.settle(scene)
 	check(scene.model.phase == "defeat" and not scene.finisher_active(), "party death does not start the boss finisher")
 	scene._process(0.0)
 	check(scene.generated_monster.visible, "boss remains visible on defeat")

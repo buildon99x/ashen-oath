@@ -1,4 +1,5 @@
 extends SceneTree
+const FxTest = preload("res://combat_fx/test_helpers.gd")
 ## Exact forecasts and interrupted-input safeguards, not a visual playtest.
 const Model = preload("res://model.gd")
 var checks: int = 0
@@ -90,6 +91,7 @@ func run_tests() -> void:
 	check(scene.confirmation.is_empty() and not scene.menu,"Escape cancels early-end dialog into battle")
 	scene.request_end_round()
 	scene.confirm_action()
+	FxTest.settle(scene)
 	check(scene.model.round_number==2,"Explicit confirmation advances exactly one round")
 	scene.request_new_cycle()
 	check(scene.confirmation=="new_cycle" and scene.model.round_number==2,"New Cycle preserves current journey pending confirmation")

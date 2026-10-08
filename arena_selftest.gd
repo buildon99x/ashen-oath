@@ -1,4 +1,5 @@
 extends SceneTree
+const FxTest = preload("res://combat_fx/test_helpers.gd")
 const Localization = preload("res://localization.gd")
 ## Asset/selector/layout contracts only; native composition is checked separately.
 var checks: int=0
@@ -48,6 +49,7 @@ func run_tests() -> void:
 		scene.selected_hero=0
 		scene.selected_part=0
 		scene.perform(0)
+		FxTest.settle(scene)
 		check(scene.finisher_active() and scene.model.phase=="reward","Normal finishing hit prepares resolved reward")
 		check(scene.battle_arena_texture()==scene.battle_arenas[node/3],"Finisher retains the just-fought region")
 		scene.finish_presentation()

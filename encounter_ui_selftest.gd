@@ -1,4 +1,5 @@
 extends SceneTree
+const FxTest = preload("res://combat_fx/test_helpers.gd")
 const Localization = preload("res://localization.gd")
 ## Scene-tree layout/interaction checks. Native screenshots are separate evidence.
 var checks: int=0
@@ -45,11 +46,12 @@ func run_tests() -> void:
 				await process_frame
 				var ward_button: bool=false
 				for child in scene.ui.get_children():
-					if child is Button and "WARD RITE" in child.text:
+					if child is Button and child.get_meta("wards", false):
 						ward_button=true
 						check(child.size.y<=100,"Ward preview does not inflate the control")
 				check(ward_button,"Marked hero sees the guard counter on its button")
 				scene.perform(3)
+				FxTest.settle(scene)
 				check(scene.model.preview_intent().attacks[1].status=="warded","Defend handler updates the secondary forecast")
 				# Reset guards/acted state so the next layout case starts independently.
 				for hero in scene.model.heroes:
