@@ -1,0 +1,23 @@
+CP13 compact combat UI: actual native 4.6.3 QA, 2026-10-08.
+Used an isolated copy of the genuinely played CP12 Judge round2 checkpoint:
+HP83/66/70, Focus6/4/6, Ash189, Gold85, main bossHP114, three actions spent.
+No model stats, save schema or reward rules changed. This is targeted UI QA,
+not another complete campaign or a difficulty comparison.
+
+Native findings and fixes:
+- Initial compact portraits expanded beyond their cards due atlas minimums.
+  Corrected expand_mode before texture assignment. Actual portraits now stay
+  inside the cards; regression checks every compact TextureRect's real size,
+  minimum and containment. Initial failing screenshot is retained as evidence.
+- Zero losses now show 0 rather than -0.
+- Actual pointer hover opened English skill details; T immediately dismissed
+  the popup. Tab inspection opened Korean omen detail without action or cost.
+- Tooltips Off survived application restart. On both languages, exact damage,
+  target/source, costs, shields, warded rite and next rhythm remain visible.
+- D opened scrollable descriptions and symbol legend while tooltips were Off.
+- Normal inputs resolved the pending 2/4/4 Judge hit, then MaraE head sever,
+  IvoW arm break and SableE final strike. Escape skipped the presentation into
+  an unselected reward. Gold85 ->123, HP81/62/66, Focus3/2/3: same rules result.
+
+Godot4.7.2 is being validated separately. This checkpoint is the 4.6.3 fallback.
+Audio used Dummy; listening, FPS and Windows-native runtime remain unverified.

@@ -90,3 +90,7 @@ The primary `intent` keys remain compatible. Optional `secondary` and `rhythm` a
 ## Presentation boundary (checkpoint 10)
 
 The optional 1.15-second finisher belongs to the scene, not the rules model. A successful `act()` that changes battle to reward already awards gold, journey ash and battle counters exactly once. The scene snapshots the pre-hit sever flags for its dissolve, immediately saves the resolved reward, and blocks other inputs until timeout or an explicit skip. Skip never resolves another command. Presentation state is not serialized; loading returns to the same pending reward. No combat, reward or economy values changed in this checkpoint.
+
+## Compact battle inspection (checkpoint 13)
+
+The rules model is unchanged. Font-independent SVG textures label HP, Focus, shields, attack types, states and forecasts. Essential source/target/loss/ward/next-rhythm information remains visible when tooltips are off. The optional tooltips setting lives beside language in the display ConfigFile and defaults on. T toggles it and immediately dismisses any popup. Tab inspection cycles a scene-owned inspection list rather than focusing action Buttons, preserving Space end-round and finisher input safety. D opens scrollable descriptions and history regardless of tooltip preference. Fixed-size TextureRects explicitly ignore atlas/source minimums before assigning textures; regressions verify actual post-layout sizes and containment.

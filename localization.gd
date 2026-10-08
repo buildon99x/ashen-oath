@@ -7,6 +7,7 @@ const FONT_PATH: String = "res://assets/fonts/AshenKorean-Regular.otf"
 const PREFERENCES_PATH: String = "user://ashen_oath_language.cfg"
 const SUPPORTED_LANGUAGES: Array[String] = ["ko", "en"]
 static var language: String = "ko"
+static var tooltips_enabled: bool = true
 static var _ready_catalog: bool = false
 static var _upper: Dictionary = {}
 static var _compiled: Array[Dictionary] = []
@@ -14,6 +15,59 @@ static var _cache: Dictionary = {}
 static var _missing: Dictionary = {}
 
 const CATALOG: Dictionary = {
+	"T / Tooltips on": "T / 툴팁 켜짐",
+	"T / Tooltips off": "T / 툴팁 꺼짐",
+	"D / Details": "D / 상세",
+	"D / ESC / RETURN": "D / ESC / 돌아가기",
+	"BATTLE DETAILS": "전투 상세",
+	"SYMBOL GUIDE": "기호 안내",
+	"HP": "체력",
+	"Focus": "집중",
+	"Shield": "방어막",
+	"Damage": "피해",
+	"Weakness": "약점",
+	"Next": "다음",
+	"Ready": "행동 가능",
+	"Acted": "행동 완료",
+	"Guard": "방어",
+	"Fallen": "쓰러짐",
+	"Break": "붕괴",
+	"Sever": "절단",
+	"Exposed": "노출",
+	"Cancelled": "취소됨",
+	"Warded": "의식 차단",
+	"Missed": "대상 없음",
+	"Half": "절반",
+	"Incoming": "공격 예고",
+	"Round": "라운드",
+	"Actions": "행동",
+	"Source": "공격 부위",
+	"Target": "대상",
+	"Costs": "소모",
+	"RECENT HISTORY": "최근 기록",
+	"SELECTED HERO / SKILLS": "선택한 영웅 / 기술",
+	"SELECTED PART": "선택한 부위",
+	"LIVE OMEN": "현재 전조",
+	"NEXT ROUND": "다음 라운드",
+	"Tab / inspect · 1–3 / hero · Up/Down / target": "Tab / 살펴보기 · 1–3 / 영웅 · 위/아래 / 부위",
+	"Heart: HP. Diamond: Focus cost, or recovery with +. Shield: defense. Attack-type icon + number: part damage. Crosshair: marked target. Broken shield: break. Split blade: sever. Type icons match weaknesses.": "하트: 체력. 마름모: 집중 소모, +는 회복. 방패: 방어막. 공격 유형 기호와 수치: 부위 피해. 조준선: 지정 대상. 깨진 방패: 붕괴. 갈라진 검: 절단. 공격 유형 기호를 약점과 맞추세요.",
+	"Tab / Shift+Tab inspects controls without acting. 1–3 selects a hero; Up/Down selects a part. Q/W/E attacks; R defends. Space ends the round. D opens these details, even with tooltips off.": "Tab / Shift+Tab으로 행동 없이 정보를 살펴봅니다. 1–3은 영웅, 위/아래는 부위 선택. Q/W/E 공격, R 방어, Space 라운드 종료. 툴팁을 꺼도 D로 상세 정보를 볼 수 있습니다.",
+	"Toggle hover and keyboard inspection tooltips. This display preference is saved separately from your journey. Details remain available with D.": "마우스와 키보드 정보 툴팁을 켜거나 끕니다. 여정과 별도로 저장하는 화면 설정입니다. 꺼도 D로 상세 정보를 볼 수 있습니다.",
+	"The tooltip preference could not be saved.": "툴팁 설정을 저장하지 못했습니다.",
+	"No target": "대상 없음",
+	"No second source": "추가 부위 없음",
+	"Two sources": "두 부위 공격",
+	"One source": "한 부위 공격",
+	"R cancels": "R로 취소",
+	"END ROUND": "라운드 종료",
+	"Resolve": "실행",
+	"Safe": "안전",
+	"Sever the source to cancel. Break it to halve damage.": "공격 부위를 절단하면 취소, 붕괴하면 피해가 절반이 됩니다.",
+	"Attacks resolve in numbered order. Values are the exact HP and Focus losses after current guards and broken sources.": "번호 순서대로 공격합니다. 수치는 현재 방어와 붕괴를 반영한 정확한 체력·집중 손실입니다.",
+	"Skill descriptions, symbols, the current omen, and recent history.": "기술 설명, 기호, 현재 전조와 최근 기록을 확인합니다.",
+	"Half incoming damage": "받는 피해 절반",
+	"Ward + half": "의식 차단 + 절반",
+
 	"Halve incoming damage this round. Restore 2 focus and 3 HP.": "이번 라운드 받는 피해를 절반으로 줄이고 집중 2, 체력 3을 회복합니다.",
 	"A newer checkpoint exists.": "더 최신 체크포인트가 있습니다.",
 	"A newer checkpoint was saved by another window. Reload the saved journey before retrying.": "다른 창에서 더 최신 체크포인트를 저장했습니다. 저장된 여정을 다시 불러온 뒤 저장을 재시도하세요.",
@@ -458,18 +512,22 @@ static func get_language() -> String:
 static func load_preferences(path: String = PREFERENCES_PATH) -> bool:
 	# Fresh installs and invalid files always use Korean. No journey/meta file is read.
 	set_language("ko")
+	tooltips_enabled = true
 	var preferences: ConfigFile = ConfigFile.new()
 	if preferences.load(path) != OK:
 		return false
+	var tips: Variant = preferences.get_value("display", "tooltips", true)
+	tooltips_enabled = tips if tips is bool else true
 	var saved: Variant = preferences.get_value("display", "language", "ko")
 	return set_language(saved) if saved is String else false
 
 static func save_preferences(path: String = PREFERENCES_PATH) -> bool:
-	# A separate, atomic language-only file cannot overwrite journey or legacy data.
+	# Separate atomic display preferences cannot overwrite journey or legacy data.
 	if path.get_file() in ["ashen_oath_meta.json", "ashen_oath_journey.save"]:
 		return false
 	var preferences: ConfigFile = ConfigFile.new()
 	preferences.set_value("display", "language", language)
+	preferences.set_value("display", "tooltips", tooltips_enabled)
 	var temporary: String = path + ".tmp"
 	if preferences.save(temporary) != OK:
 		return false

@@ -2,6 +2,10 @@ extends Node2D
 
 const Localization = preload("res://localization.gd")
 const Model = preload("res://model.gd")
+const FxSnapshot = preload("res://combat_fx/combat_fx_snapshot.gd")
+const FxEvent = preload("res://combat_fx/combat_fx_event.gd")
+const FxDirector = preload("res://combat_fx/combat_fx_director.gd")
+const BattleIcons = preload("res://compact_battle_icons.gd")
 const ActorArt = preload("res://generated_actor_art.gd")
 const MonsterArt = preload("res://generated_monster.gd")
 const HeroAnimation = preload("res://animated_hero.gd")
@@ -36,10 +40,22 @@ var clock_time: float = 0.0
 var menu: bool = true
 var help_open: bool = false
 var build_open: bool = false
+var details_open: bool = false
+var details_scroll: ScrollContainer
+var detail_controls: Array[Control] = []
+var tooltip_panel: PanelContainer
+var tooltip_owner: Control
+var inspection_index: int = -1
+var inspection_ring: Panel
 var muted: bool = false
 var message: String = ""
 var confirmation: String = ""
 var hit_flash: float = 0.0
+var fx_director: Node2D
+var fx_event_id: int = 0
+var fx_pending_finisher: Dictionary = {}
+var fx_legacy_mode: bool = false # Explicit A/B baseline, never a combat rule.
+var fx_last_event: Dictionary = {}
 var fx_time: float=0.0
 var fx_actor: int=0
 var fx_part: int=0
@@ -89,6 +105,12 @@ func _ready() -> void:
 		actor.scale=Vector2(1.25,1.25)
 		add_child(actor)
 		actors.append(actor)
+		actor.animation_event.connect(_hero_animation_event.bind(i))
+	fx_director = FxDirector.new()
+	fx_director.font = font
+	fx_director.impacted.connect(_fx_impact)
+	fx_director.completed.connect(_fx_complete)
+	add_child(fx_director)
 	combat_feedback = Node2D.new()
 	combat_feedback.draw.connect(draw_enemy_feedback)
 	add_child(combat_feedback)
@@ -107,21 +129,24 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	clock_time += delta
+	if is_instance_valid(fx_director): fx_director.advance(delta)
+	var shown = battle_view()
 	advance_finisher(delta)
-	generated_monster.visible=menu or model.phase in ["battle","defeat"] or finisher_active()
+	generated_monster.visible=menu or display_phase() in ["battle","defeat"] or finisher_active()
 	hit_flash = maxf(0.0, hit_flash - delta * 2.0)
 	fx_time=maxf(0.0,fx_time-delta)
 	enemy_flash=maxf(0.0,enemy_flash-delta)
 	combat_feedback.queue_redraw()
 	for i in range(actors.size()):
 		var actor: Node2D=actors[i]
-		actor.visible=not menu and (model.phase in ["battle","victory"] or finisher_active())
-		actor.position=victory_feet[i] if model.phase=="victory" and not menu else party_feet[i]
-		actor.facing="down" if model.phase=="victory" and not menu else "right"
-		actor.scale=Vector2(1.8,1.8) if model.phase=="victory" and not menu else Vector2(1.25,1.25)
-		if actor.visible and model.heroes.size()==3:
-			if model.heroes[i].hp<=0 and actor.state!="death": actor.play_state("death",true)
-			elif model.heroes[i].hp>0 and actor.state=="death": actor.play_state("idle",true)
+		actor.playback_speed = 0.0 if fx_busy() and fx_director.hold_remaining > 0.0 else 1.0
+		actor.visible=not menu and (display_phase() in ["battle","victory"] or finisher_active())
+		actor.position=victory_feet[i] if display_phase()=="victory" and not menu else party_feet[i]
+		actor.facing="down" if display_phase()=="victory" and not menu else "right"
+		actor.scale=Vector2(1.8,1.8) if display_phase()=="victory" and not menu else Vector2(1.25,1.25)
+		if actor.visible and shown.heroes.size()==3:
+			if shown.heroes[i].hp<=0 and actor.state!="death": actor.play_state("death",true)
+			elif shown.heroes[i].hp>0 and actor.state=="death": actor.play_state("idle",true)
 	queue_redraw()
 
 func finisher_active() -> bool:
@@ -141,6 +166,9 @@ func advance_finisher(delta: float) -> void:
 
 func finish_presentation() -> void:
 	if not finisher_active(): return
+	if fx_busy(): fx_director.clear()
+	fx_pending_finisher.clear()
+	for actor in actors: actor.playback_speed = 1.0
 	finisher_remaining=0.0
 	refresh()
 
@@ -163,6 +191,20 @@ func draw_finisher_feedback() -> void:
 		combat_feedback.draw_rect(Rect2(point,Vector2(3,3)),Color(0.83,0.71,0.49,sin(release*PI)*0.85))
 
 func _input(event: InputEvent) -> void:
+	if fx_busy():
+		get_viewport().set_input_as_handled()
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode in [KEY_SPACE,KEY_ENTER,KEY_ESCAPE]: skip_combat_presentation()
+			elif event.keycode == KEY_L: toggle_language()
+			elif event.keycode == KEY_T and not finisher_active(): toggle_tooltips()
+		elif event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
+			if LANGUAGE_RECT.has_point(event.position): toggle_language()
+			elif (FINISHER_SKIP_RECT if finisher_active() else Rect2(1050,842,350,42)).has_point(event.position): skip_combat_presentation()
+		return
+	if battle_input_open() and event is InputEventKey and event.keycode == KEY_TAB:
+		get_viewport().set_input_as_handled()
+		if event.pressed and not event.echo: inspect_next(-1 if event.shift_pressed else 1)
+		return
 	if not finisher_active(): return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_L:
 		get_viewport().set_input_as_handled()
@@ -181,12 +223,19 @@ func _input(event: InputEvent) -> void:
 		if FINISHER_SKIP_RECT.has_point(event.position): finish_presentation()
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if fx_busy():
+		_input(event)
+		return
 	if finisher_active():
 		_input(event)
 		return
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var key: int = event.keycode
+	if key == KEY_T:
+		toggle_tooltips()
+		get_viewport().set_input_as_handled()
+		return
 	if key == KEY_L:
 		toggle_language()
 		get_viewport().set_input_as_handled()
@@ -212,6 +261,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		elif key == KEY_ENTER:
 			confirm_action()
 		return
+	if details_open:
+		if key in [KEY_ESCAPE, KEY_D]:
+			details_open = false
+			refresh(false)
+		elif is_instance_valid(details_scroll):
+			if key in [KEY_DOWN,KEY_PAGEDOWN]: details_scroll.scroll_vertical += 70 if key == KEY_DOWN else 450
+			elif key in [KEY_UP,KEY_PAGEUP]: details_scroll.scroll_vertical -= 70 if key == KEY_UP else 450
+		return
 	if build_open:
 		if key == KEY_ESCAPE or key == KEY_B:
 			build_open = false
@@ -228,7 +285,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	elif key == KEY_B and not model.run.is_empty():
 		build_open = true
 		refresh()
+	elif key == KEY_D and battle_input_open():
+		details_open = true
+		refresh(false)
 	elif key == KEY_ESCAPE:
+		if is_instance_valid(tooltip_panel):
+			hide_detail_popup()
+			return
 		if help_open:
 			help_open = false
 		elif not model.heroes.is_empty() and model.phase != "title":
@@ -236,8 +299,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		refresh()
 	elif not menu and not help_open and model.phase == "battle":
 		if key >= KEY_1 and key <= KEY_3:
-			selected_hero = key - KEY_1
-			refresh()
+			select_hero(key - KEY_1)
 		elif key == KEY_Q or key == KEY_W or key == KEY_E or key == KEY_R:
 			var keys: Array = [KEY_Q, KEY_W, KEY_E, KEY_R]
 			perform(keys.find(key))
@@ -296,8 +358,8 @@ func button(text: String, rect: Rect2, action: Callable, active: bool = false, d
 	b.position = rect.position
 	b.size = rect.size
 	b.set_meta("layout_rect", rect)
-	b.disabled = disabled
-	if model.phase == "battle" and not menu and not help_open and not build_open and confirmation.is_empty() and not coach_open and not recovery_notice_open and not save_error_open:
+	b.disabled = disabled or (fx_busy() and not during_finisher)
+	if model.phase == "battle" and not menu and not help_open and not build_open and not details_open and confirmation.is_empty() and not coach_open and not recovery_notice_open and not save_error_open:
 		b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_size_override("font_size", text_size)
 	b.add_theme_font_override("font",font)
@@ -308,7 +370,8 @@ func button(text: String, rect: Rect2, action: Callable, active: bool = false, d
 	b.add_theme_stylebox_override("disabled", pixel_frame("disabled"))
 	b.pressed.connect(func():
 		if during_finisher and b.is_queued_for_deletion(): return
-		if during_finisher or not finisher_active(): action.call())
+		if details_open and not str(b.get_meta("inspect_id", "")).is_empty(): return
+		if during_finisher or not presentation_active(): action.call())
 	ui.add_child(b)
 	b.size = rect.size
 	return b
@@ -330,7 +393,11 @@ func wrap_button(text: String, max_width: float, text_size: int = 18) -> String:
 func refresh(save_journey: bool = true) -> void:
 	if save_journey and model.persist_meta and not model.run.is_empty():
 		model.save_resume()
+	var shown = battle_view()
 	sync_save_notices()
+	hide_detail_popup()
+	detail_controls.clear()
+	inspection_index = -1
 	for child in ui.get_children():
 		child.queue_free()
 	label_at("A S H E N   O A T H", Vector2(38, 22), 25, GOLD)
@@ -345,8 +412,8 @@ func refresh(save_journey: bool = true) -> void:
 	if menu:
 		show_menu()
 	else:
-		label_at("CYCLE %d  /  ASH %d  /  GOLD %d  /  KARMA %+d" % [int(model.meta.get("runs",0))+(0 if model.phase in ["victory","defeat"] else 1), model.meta.get("essence",0), model.run.get("gold",0), model.run.get("karma",0)], Vector2(390, 33), 14, PALE,430)
-		match model.phase:
+		label_at("CYCLE %d  /  ASH %d  /  GOLD %d  /  KARMA %+d" % [int(shown.meta.get("runs",0))+(0 if display_phase() in ["victory","defeat"] else 1), shown.meta.get("essence",0), shown.run.get("gold",0), shown.run.get("karma",0)], Vector2(390, 33), 14, PALE,430)
+		match display_phase():
 			"battle": show_battle()
 			"map": show_map()
 			"reward": show_choices(model.rewards, "A MEMORY WORTH KEEPING", "Choose recovery, tribute, or a relic for this journey.", true)
@@ -357,6 +424,8 @@ func refresh(save_journey: bool = true) -> void:
 		show_help()
 	if build_open:
 		show_build()
+	if details_open:
+		show_battle_details()
 	if not confirmation.is_empty():
 		show_confirmation()
 	if coach_open:
@@ -370,6 +439,7 @@ func refresh(save_journey: bool = true) -> void:
 	show_language_button()
 
 func show_menu() -> void:
+	show_tooltip_setting(Rect2(1080,105,320,42))
 	label_at("THE GODS LEFT THEIR CROWNS.", Vector2(70, 192), 18, TEAL)
 	label_at("We learned\nto break them.", Vector2(65, 233), 62, PALE)
 	paragraph("Three wanderers. Nine crossings. One hollow throne.\nRead the omen. Break a defense. Sever the source of its power.", Vector2(72, 405), 620, 21)
@@ -387,14 +457,15 @@ func show_menu() -> void:
 		var card: String = "%s %d/5 · %s\n%s / next run" % [key.capitalize(),level,price,effect]
 		var upgrade_button = button(card, Rect2(72+i*218, 729, 208, 82), upgrade.bind(key), false, unavailable, false, 15)
 		upgrade_button.add_theme_font_size_override("font_size",15)
-		upgrade_button.tooltip_text = display_text("Each rank: %s. Applies to the next new journey. Rank %d of 5." % [effect,level])
+		set_detail(upgrade_button, display_text("Each rank: %s. Applies to the next new journey. Rank %d of 5." % [effect,level]))
 		i += 1
 	label_at(message if not message.is_empty() else "Original tactical roguelite • mouse or keyboard • no time pressure", Vector2(72, 820), 15, Color("91a6a7"))
 
 func begin_run() -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	confirmation = ""
 	build_open = false
+	details_open = false
 	model.new_run(int(Time.get_unix_time_from_system()) % 1000000)
 	coach_open = false
 	coach_eligible = int(model.meta.get("runs",0)) == 0
@@ -405,7 +476,7 @@ func begin_run() -> void:
 	refresh()
 
 func request_new_cycle() -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	if not model.run.is_empty() and model.phase not in ["title", "victory", "defeat"]:
 		confirmation = "new_cycle"
 		refresh()
@@ -413,7 +484,7 @@ func request_new_cycle() -> void:
 		begin_run()
 
 func request_end_round() -> void:
-	if finisher_active() or coach_open or recovery_notice_open or save_error_open: return
+	if presentation_active() or coach_open or recovery_notice_open or save_error_open or details_open: return
 	if model.phase != "battle": return
 	if model.actions_remaining() > 0:
 		confirmation = "end_round"
@@ -422,7 +493,7 @@ func request_end_round() -> void:
 		finish_round()
 
 func confirm_action() -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	var pending: String = confirmation
 	confirmation = ""
 	if pending == "new_cycle": begin_run()
@@ -449,129 +520,168 @@ func show_confirmation() -> void:
 	button("ENTER / END ROUND" if is_round else "ENTER / NEW CYCLE",Rect2(718,513,314,62),confirm_action)
 
 func upgrade(key: String) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	var success: bool = model.buy_upgrade(key)
 	message = "Legacy strengthened." if success else model.last_error
 	refresh()
 
 func show_battle() -> void:
-	label_at("%02d  /  %s" % [int(model.run.get("node",0))+1, model.boss.get("name", "The Uncrowned")], Vector2(40, 104), 28, PALE)
-	label_at("ROUND %d  /  %d ACTIONS LEFT  /  %s" % [model.round_number, model.actions_remaining(), REGION_NAMES[current_biome()]], Vector2(40, 145), 15, TEAL)
-	label_at("TITAN  %d / %d" % [model.boss.get("hp",0), model.boss.get("max_hp",0)], Vector2(530, 103), 15, GOLD)
-	var threat: Dictionary = model.preview_intent()
-	var omen_color: Color = TEAL if threat.status == "cancelled" else (GOLD if threat.status == "staggered" else Color("efa080"))
+	var shown = battle_view()
+	label_at("%02d  /  %s" % [int(shown.run.get("node",0))+1, shown.boss.get("name", "The Uncrowned")], Vector2(40,104),28,PALE)
+	raw_label(display_text("ROUND") + " %d   /   " % shown.round_number + display_text("Actions") + " %d  /  " % shown.actions_remaining()+display_text(REGION_NAMES[current_biome()]),Vector2(40,145),15,TEAL,690)
+	icon_stat("hp","%d / %d" % [shown.boss.hp,shown.boss.max_hp],Vector2(530,103),GOLD,18,260)
+	var threat: Dictionary = shown.preview_intent()
 	show_omen(threat)
-	label_at("HERO > PART > SKILL   /   DAMAGE FORECAST: PART HP", Vector2(40, 553), 14, TEAL)
-	for i in range(model.parts.size()):
-		var p: Dictionary = model.parts[i]
-		var status: String = "SEVERED" if p.get("severed",false) else ("BROKEN" if p.get("broken",false) else "SHIELD %d" % p.get("shield",0))
-		var t: String = "%s · %s\n%s  |  HP %d/%d\nWeak: %s" % [str(p.get("level","")), p.get("name",""), status, p.get("hp",0), p.get("max_hp",0), str(p.get("weakness",""))]
-		var b = button(t, Rect2(1080, 183+i*119, 320, 104), select_part.bind(i), i == selected_part, p.get("severed",false), false, 17)
-		b.add_theme_font_size_override("font_size", 17)
-		b.tooltip_text = display_text("Severing removes %s from future rounds." % p.get("move",""))
+	label_at("Tab / inspect · 1–3 / hero · Up/Down / target",Vector2(40,552),14,TEAL,660)
+	for i in range(shown.parts.size()):
+		var p: Dictionary = shown.parts[i]
+		var origin: Vector2 = Vector2(1080,183+i*119)
+		var b = button("",Rect2(origin,Vector2(320,104)),select_part.bind(i),i==selected_part,p.severed,false,16)
+		var part_title: String = display_text(p.level) + " · " + display_text(p.name)
+		b.text = part_title
+		compact_title(b)
+		var status: String = "Sever" if p.severed else ("Break" if p.broken else "Shield")
+		icon_stat("sever" if p.severed else ("break" if p.broken else "shield"),str(p.shield),origin+Vector2(16,41),GOLD if not p.severed else Color("7b868c"),17,65)
+		icon_stat("hp","%d/%d" % [p.hp,p.max_hp],origin+Vector2(114,41),PALE,17,150)
+		icon_stat(str(p.weakness),display_text("Weakness")+" / "+display_text(p.weakness),origin+Vector2(16,70),TEAL,14,264)
+		var detail: String = part_title+"\n"+display_text(status)+" %d / " % p.shield+display_text("HP")+" %d/%d\n" % [p.hp,p.max_hp]+display_text("Weakness")+" / "+display_text(p.weakness)+"\n"+display_text("Severing removes %s from future rounds." % p.move)
 		for attack_index in range(threat.attacks.size()):
 			var attack: Dictionary = threat.attacks[attack_index]
 			if i == int(attack.part) and not p.severed:
-				label_at(str(attack_index+1),Vector2(1088,185+i*119),16,omen_color,20)
-				b.tooltip_text = display_text("OMEN %d / %s\n%s" % [attack_index+1,attack.name,attack.counterplay])
+				icon_stat("source",str(attack_index+1),origin+Vector2(261,72),omen_shade(attack.status),14,40)
+				detail += "\n"+display_text("OMEN %d / %s\n%s" % [attack_index+1,attack.name,attack.counterplay])
+		set_detail(b,detail,"part_%d" % i)
 	var build_button = button("B / VIEW BUILD",Rect2(1080,538,320,36),func(): build_open=true; refresh(),false,false,false,14)
-	build_button.add_theme_font_size_override("font_size",14)
-	for i in range(model.heroes.size()):
-		var h: Dictionary = model.heroes[i]
-		var state: String = "FALLEN" if h.hp<=0 else ("GUARD" if h.guard else ("ACTED" if h.acted else "READY"))
-		var t: String = "%d  %s  /  %s\nHP %d/%d   MP %d/%d  %s" % [i+1, h.get("name",""), h.get("role",""), h.get("hp",0), h.get("max_hp",0), h.get("mp",0), h.get("max_mp",0), state]
-		var hero_button=button(t, Rect2(40+i*455, 592, 440, 84), select_hero.bind(i), i == selected_hero, h.get("hp",0)<=0)
-		var portrait=AtlasTexture.new()
-		portrait.atlas=ActorArt.TEXTURE
-		portrait.region=ActorArt.PORTRAIT_REGIONS[i]
-		hero_button.icon=portrait
-		hero_button.expand_icon=true
-		hero_button.add_theme_constant_override("icon_max_width",42)
-		meter(Rect2(99+i*455,662,170,4),float(h.hp)/maxf(1,float(h.max_hp)),Color("a7c48e"))
+	set_detail(build_button,display_text("MEMORIES OF THIS JOURNEY"),"build")
+	for i in range(shown.heroes.size()):
+		var h: Dictionary = shown.heroes[i]
+		var origin: Vector2 = Vector2(40+i*455,592)
+		var state: String = "Fallen" if h.hp<=0 else ("Guard" if h.guard else ("Acted" if h.acted else "Ready"))
+		var b = button("",Rect2(origin,Vector2(440,84)),select_hero.bind(i),i==selected_hero,h.hp<=0)
+		var portrait = TextureRect.new()
+		var atlas = AtlasTexture.new()
+		atlas.atlas = ActorArt.TEXTURE
+		atlas.region = ActorArt.PORTRAIT_REGIONS[i]
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.texture = atlas
+		portrait.position = origin+Vector2(10,12)
+		portrait.size = Vector2(42,54)
+		portrait.set_meta("compact_size",Vector2(42,54))
+		portrait.set_meta("hero_card_rect",Rect2(origin,Vector2(440,84)))
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(portrait)
+		raw_label("%d  " % (i+1)+display_text(h.name),origin+Vector2(66,6),19,GOLD if i==selected_hero else PALE,235)
+		icon_stat(state.to_lower(),display_text(state),origin+Vector2(310,8),TEAL if not h.acted else Color("93a6a4"),13,112)
+		icon_stat("hp","%d/%d" % [h.hp,h.max_hp],origin+Vector2(64,37),PALE,18,160)
+		icon_stat("focus","%d/%d" % [h.mp,h.max_mp],origin+Vector2(255,37),TEAL,18,130)
+		meter(Rect2(origin+Vector2(65,71),Vector2(170,4)),float(h.hp)/maxf(1,float(h.max_hp)),Color("a7c48e"))
 		var loss: int = threat.losses[i]
 		if loss > 0:
 			var forecast = ColorRect.new()
-			forecast.position = Vector2(99+i*455+170*float(h.hp-loss)/h.max_hp,662)
+			forecast.position = origin+Vector2(65+170*float(h.hp-loss)/h.max_hp,71)
 			forecast.size = Vector2(170*float(loss)/h.max_hp,4)
 			forecast.color = Color("f18d71")
 			forecast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			ui.add_child(forecast)
-		meter(Rect2(280+i*455,662,177,4),float(h.mp)/maxf(1,float(h.max_mp)),Color("79b6bf"))
-	var hero: Dictionary = model.heroes[selected_hero]
-	var skills: Array = hero.get("skills",[])
-	for i in range(skills.size()):
-		var skill: Dictionary = skills[i]
-		var keys: Array = ["Q", "W", "E", "R"]
-		var prediction: Dictionary = model.preview_action(selected_hero,i,selected_part)
-		var summary: String = prediction.get("summary", "NO TARGET")
+		meter(Rect2(origin+Vector2(256,71),Vector2(162,4)),float(h.mp)/maxf(1,float(h.max_mp)),TEAL)
+		set_detail(b,display_text("%d  %s  /  %s\nHP %d/%d   MP %d/%d  %s" % [i+1,h.name,h.role,h.hp,h.max_hp,h.mp,h.max_mp,state.to_upper()]),"hero_%d" % i)
+	var hero: Dictionary = shown.heroes[selected_hero]
+	for i in range(hero.skills.size()):
+		var skill: Dictionary = hero.skills[i]
+		var keys: Array[String] = ["Q","W","E","R"]
+		var prediction: Dictionary = shown.preview_action(selected_hero,i,selected_part)
+		var origin: Vector2 = Vector2(40+i*250,689)
+		var b = button("",Rect2(origin,Vector2(235,88)),perform.bind(i),false,not prediction.get("valid",false),false,16)
+		b.text = keys[i]+"  "+display_text(skill.name)
+		compact_title(b)
+		var shade: Color = PALE if not b.disabled else Color("798487")
 		if prediction.get("guard",false):
-			var focus_gain: int = int(prediction.get("focus", mini(2, maxi(0, int(hero.max_mp)-int(hero.mp)))))
-			var stance: String = "WARD RITE + HALVE" if not prediction.get("wards",[]).is_empty() else "HALVE INCOMING"
-			summary = "%s\n+%d HP / +%d Focus" % [stance, prediction.get("heal",0), focus_gain]
-		var card: String = "%s  %s\n%s · %d MP\n%s" % [keys[i], skill.get("name",""), skill.get("type","").to_upper(), skill.get("cost",0),summary]
-		if prediction.get("guard",false): card = "%s  %s\n%s" % [keys[i], skill.get("name",""),summary]
-		var b = button(card, Rect2(40+i*250, 689, 235, 88), perform.bind(i), false, not prediction.get("valid",false), false, 16)
-		b.add_theme_font_size_override("font_size",16)
-		b.tooltip_text = display_text(skill.get("description","") + ("\nForecast: %d titan HP, including any sever rupture. Part damage is shown on the button." % prediction.get("titan_damage",0) if not prediction.get("guard",false) else "\nDefend halves normal attacks and cancels a wardable rite targeting this hero. The live omen updates after Defend."))
-		var icon_path: String="res://assets/ui/"+skill.get("type","slash")+".png"
-		if ResourceLoader.exists(icon_path):
-			b.icon=load(icon_path)
-			b.expand_icon=true
-			b.add_theme_constant_override("icon_max_width",22)
-	button("SPACE / END ROUND\n" + ("OMEN CANCELLED" if threat.status == "cancelled" else "RESOLVE OMEN"), Rect2(1060, 689, 340, 88), request_end_round, true)
-	var lines: Array = model.log.slice(maxi(0,model.log.size()-3))
-	paragraph("\n".join(lines), Vector2(42, 797), 1320, 16, Color("adc0bd"))
-	if not message.is_empty():
-		label_at(message, Vector2(420, 170), 16, GOLD,620)
+			var wards: bool = not prediction.get("wards",[]).is_empty()
+			icon_stat("guard",display_text("Ward + half" if wards else "Half incoming damage"),origin+Vector2(14,31),TEAL if not b.disabled else shade,13,207)
+			icon_stat("hp","+%d" % prediction.get("heal",0),origin+Vector2(16,58),shade,18,91)
+			icon_stat("focus","+%d" % prediction.get("focus",0),origin+Vector2(125,58),shade,18,90)
+			b.set_meta("focus_gain",prediction.get("focus",0))
+			b.set_meta("wards",wards)
+		else:
+			icon_stat(str(skill.type),"%d" % prediction.get("damage",0),origin+Vector2(16,34),shade,23,75)
+			icon_stat("focus",str(skill.cost),origin+Vector2(153,36),TEAL if not b.disabled else shade,18,60)
+			var outcome: String = "Sever" if prediction.get("severs",false) else ("Break" if prediction.get("breaks",false) else ("Exposed" if shown.parts[selected_part].broken else "-%d" % prediction.get("shield_loss",0)))
+			icon_stat("sever" if prediction.get("severs",false) else ("break" if shown.parts[selected_part].broken or prediction.get("breaks",false) else "shield"),display_text(outcome),origin+Vector2(16,62),GOLD if not b.disabled else shade,14,142)
+			b.set_meta("damage",prediction.get("damage",0))
+			b.set_meta("cost",skill.cost)
+		b.set_meta("prediction",prediction.duplicate(true))
+		var detail: String = display_text(skill.name)+" / "+display_text(skill.type)+"\n"+display_text(skill.description)
+		if prediction.get("guard",false):
+			detail += "\n"+display_text("Defend halves normal attacks and cancels a wardable rite targeting this hero. The live omen updates after Defend.")
+		else:
+			detail += "\n"+display_text("Costs")+": %d " % skill.cost+display_text("Focus")+"\n"+display_text(prediction.get("summary","NO TARGET"))+"\n"+display_text("Forecast: %d titan HP, including any sever rupture. Part damage is shown on the button." % prediction.get("titan_damage",0))
+		set_detail(b,detail,"skill_%d" % i)
+	var end_button = button("SPACE / END ROUND",Rect2(1060,689,340,88),request_end_round,true,false,false,18)
+	compact_title(end_button)
+	var total_loss: int = 0
+	for loss in threat.losses: total_loss += int(loss)
+	icon_stat("danger" if total_loss>0 else "guard",display_text("Resolve" if total_loss>0 else "Safe")+" / "+str(-total_loss),Vector2(1110,735),omen_shade(threat.status),19,240)
+	set_detail(end_button,display_text("Attacks resolve in numbered order. Values are the exact HP and Focus losses after current guards and broken sources."),"end_round")
+	var details = button("D / Details",Rect2(40,797,190,40),func(): details_open=true; refresh(false),false,false,false,15)
+	set_detail(details,display_text("Skill descriptions, symbols, the current omen, and recent history."),"details")
+	var toggle = button("T / Tooltips on" if Localization.tooltips_enabled else "T / Tooltips off",Rect2(240,797,220,40),toggle_tooltips,false,false,false,15)
+	set_detail(toggle,display_text("Toggle hover and keyboard inspection tooltips. This display preference is saved separately from your journey. Details remain available with D."),"tooltips")
+	if not shown.log.is_empty():
+		var last_log = paragraph(str(shown.log[-1]),Vector2(486,801),900,15,Color("adc0bd"))
+		last_log.max_lines_visible = 2
+	if not message.is_empty(): label_at(message,Vector2(40,846),16,GOLD,1320)
+	if fx_busy():
+		button("SPACE / ESC / SKIP",Rect2(1050,842,350,42),skip_combat_presentation,false,false,true,15)
 
 func omen_shade(status: String) -> Color:
 	if status in ["cancelled","warded","missed"]: return TEAL
 	return GOLD if status == "staggered" else Color("efa080")
 
 func show_omen(threat: Dictionary) -> void:
-	var attacks: Array=threat.get("attacks",[])
-	var rhythm: Dictionary=threat.get("rhythm",{})
-	var heading: String=str(rhythm.get("name",threat.status)).to_upper()
-	label_at("OMEN / " + heading,Vector2(40,189),16,omen_shade(threat.status),295)
-	if attacks.size()<=1:
-		paragraph(model.intent.get("name","Waiting"),Vector2(40,217),300,24,PALE)
-		paragraph(threat.source + " / " + str(threat.status).to_upper(),Vector2(40,257),287,15,TEAL)
-		paragraph(threat.description,Vector2(40,301),287,18,omen_shade(threat.status))
-		var hint: String = "Sever this source to cancel its attack." if threat.status=="staggered" else ("The party is safe this round." if threat.status in ["cancelled","warded","missed"] else "Break this source to halve its attack.")
-		if not rhythm.is_empty(): hint=str(rhythm.description)
-		paragraph(hint,Vector2(40,400),287,15,Color("b0c1bc"))
-		return
-	for i in range(attacks.size()):
-		var attack: Dictionary=attacks[i]
-		var y: int=226+i*144
-		label_at("%d / %s" % [i+1,attack.name],Vector2(40,y),20,PALE,290)
-		label_at(str(attack.source)+" / "+str(attack.status).to_upper(),Vector2(40,y+28),14,omen_shade(attack.status),290)
-		var loss_text: Array[String]=[]
-		for h in attack.targets:
-			var detail: String="%s -%d HP" % [model.heroes[h].name,attack.losses[h]]
-			if attack.focus_losses[h]>0: detail+=" / -%d MP" % attack.focus_losses[h]
-			loss_text.append(detail)
-		var result: String="\n".join(loss_text)
-		if attack.status=="cancelled": result="SEVERED / NO ATTACK"
-		elif attack.status=="warded": result="0 HP / 0 FOCUS (DEFEND)"
-		elif attack.status=="missed": result="NO LIVING TARGET"
-		paragraph(result,Vector2(40,y+51),286,16,omen_shade(attack.status))
+	var shown = battle_view()
+	var rhythm: Dictionary = threat.get("rhythm",{})
+	label_at("OMEN / "+str(rhythm.get("name",threat.status)),Vector2(40,189),16,omen_shade(threat.status),295)
+	for i in range(threat.attacks.size()):
+		var attack: Dictionary = threat.attacks[i]
+		var y: float = 226+i*128
+		var title = label_at("%d / %s" % [i+1,attack.name],Vector2(40,y),19,PALE,292)
+		set_detail(title,display_text(attack.description)+"\n"+display_text(attack.counterplay),"omen_%d" % i)
+		icon_stat("source",display_text(attack.source),Vector2(40,y+29),omen_shade(attack.status),14,291)
+		for target_index in range(attack.targets.size()):
+			var h: int = attack.targets[target_index]
+			var row_y: float = y+55+target_index*21
+			icon_stat("target",display_text(shown.heroes[h].name),Vector2(40,row_y),PALE,14,106)
+			icon_stat("hp",str(-int(attack.losses[h])),Vector2(148,row_y),omen_shade(attack.status),15,83)
+			icon_stat("focus",str(-int(attack.focus_losses[h])),Vector2(238,row_y),TEAL,15,70)
 		if attack.wardable:
-			var counter: String="%s: DEFEND CANCELS THIS RITE" % model.heroes[attack.targets[0]].name.to_upper()
-			paragraph(counter,Vector2(40,y+87),286,14,TEAL)
-	label_at("NEXT / "+str(rhythm.get("next","Read the next omen")),Vector2(40,495),14,GOLD,295)
+			raw_label(display_text(shown.heroes[attack.targets[0]].name)+": "+display_text("Warded" if attack.status == "warded" else ("Cancelled" if attack.status == "cancelled" else "R cancels")),Vector2(40,y+81),14,TEAL,292)
+	if not rhythm.is_empty():
+		icon_stat("next",display_text(rhythm.get("next","Read the next omen")),Vector2(40,491),GOLD,15,292)
+		var intact: int = 0
+		for part in shown.parts:
+			if not part.severed: intact += 1
+		var next_name: String = str(rhythm.get("next",""))
+		var two: bool = next_name in ["Split Verdict","Zenith Release"] and intact>1
+		var next_text: String = "Two sources" if two else "One source"
+		var next_label = label_at(next_text,Vector2(66,515),13,GOLD if two else TEAL,264)
+		set_detail(next_label,display_text(str(rhythm.get("description",""))),"rhythm")
+	else:
+		label_at("Sever the source to cancel. Break it to halve damage.",Vector2(40,482),13,TEAL,285).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 func select_hero(index: int) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	selected_hero = index
 	message = ""
 	refresh()
+	inspect_by_id("hero_%d" % index)
 
 func select_part(index: int) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	selected_part = index
 	message = ""
 	refresh()
+	inspect_by_id("part_%d" % index)
 
 func restore_battle_selection() -> void:
 	if model.phase != "battle": return
@@ -585,7 +695,7 @@ func restore_battle_selection() -> void:
 			if not model.heroes[i].acted: break
 
 func cycle_part(direction: int) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	for offset in range(1,model.parts.size()+1):
 		var candidate: int=posmod(selected_part+direction*offset,model.parts.size())
 		if not model.parts[candidate].severed:
@@ -593,9 +703,10 @@ func cycle_part(direction: int) -> void:
 			break
 	message=""
 	refresh()
+	inspect_by_id("part_%d" % selected_part)
 
-func perform(index: int) -> void:
-	if finisher_active() or coach_open or recovery_notice_open or save_error_open: return
+func _perform_legacy(index: int) -> void:
+	if finisher_active() or coach_open or recovery_notice_open or save_error_open or details_open: return
 	var before_hp: int=int(model.boss.get("hp",0))
 	var before_gold: int=int(model.run.get("gold",0))
 	var before_ash: int=int(model.run.get("essence",0))
@@ -636,7 +747,7 @@ func perform(index: int) -> void:
 		message = model.last_error
 	refresh()
 
-func finish_round() -> void:
+func _finish_round_legacy() -> void:
 	if finisher_active(): return
 	if model.phase != "battle": return
 	confirmation = ""
@@ -700,7 +811,7 @@ func show_map() -> void:
 		paragraph(model.log[-1],Vector2(65,866),1300,14,GOLD)
 
 func travel(index: int) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	model.travel(index)
 	selected_part = 0
 	selected_hero = 0
@@ -723,13 +834,13 @@ func show_choices(options: Array, title_text: String, description: String, rewar
 		paragraph(message,Vector2(65,446),1280,18,GOLD)
 
 func choose_reward(index: int) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	model.choose_reward(index)
 	tone(440,0.2)
 	refresh()
 
 func choose_event(index: int) -> void:
-	if finisher_active(): return
+	if presentation_active(): return
 	if not model.choose_event(index):
 		message=model.last_error
 	else:
@@ -793,6 +904,7 @@ func show_help() -> void:
 	ui.add_child(panel)
 	label_at("THE ART OF UNMAKING",Vector2(285,135),32,GOLD)
 	paragraph("1. Select a hero, then one of the titan's three body parts.\n2. Match a skill's type to the part's weakness to break its shield.\n3. Keep attacking the broken part. Depleting its HP severs it and removes its move.\n4. Each living hero acts once per round. End Round resolves every visible omen.\n5. Defend halves normal damage and cancels a wardable rite marked on that hero.\n6. Between battles, choose relics, rests and moral encounters. Death earns a new beginning; ash upgrades persist.\n\nMouse: click heroes, parts, skills and choices\nKeyboard: 1–3 hero • ↑/↓ target • Q/W/E attack • R guard\nSpace end round • B build / relics • V studio • H guide • M sound • Esc menu\n\nThere are no timers. Skill buttons predict damage and break/sever.\nThe omen updates after break, sever and guard. B shows relic effects.\nYour journey and legacy save after every choice. Resume from the title screen.",Vector2(285,200),850,20)
+	show_tooltip_setting(Rect2(285,716,290,50))
 	button("CLOSE GUIDE",Rect2(855,716,285,50),func(): help_open=false; refresh(),true)
 
 func show_build() -> void:
@@ -831,6 +943,7 @@ func tone(frequency: float, duration: float) -> void:
 	audio.play()
 
 func _draw() -> void:
+	var shown = battle_view()
 	draw_rect(Rect2(0,0,1440,900), INK)
 	# Original layered silhouette landscape, generated directly by Godot.
 	for layer in range(5):
@@ -849,13 +962,13 @@ func _draw() -> void:
 		draw_circle(Vector2(x,y),1.5,Color(0.8,0.68,0.43,0.2+0.15*sin(clock_time+i)))
 	if environments.size()==3:
 		var biome: int=current_biome()
-		draw_texture_rect(battle_arena_texture() if not menu and (model.phase=="battle" or finisher_active()) else environments[biome],Rect2(0,0,1440,900),false)
+		draw_texture_rect(battle_arena_texture() if not menu and (display_phase()=="battle" or finisher_active()) else environments[biome],Rect2(0,0,1440,900),false)
 		if menu:
 			draw_rect(Rect2(0,80,680,820),Color(0.035,0.06,0.075,0.65))
 		# soft grounded arena shadow
 		for i in range(6):
 			draw_rect(Rect2(0,560+i*9,1440,12),Color(0.03,0.065,0.08,0.07+i*0.03))
-	if not menu and model.phase!="battle" and not finisher_active():
+	if not menu and display_phase()!="battle" and not finisher_active():
 		draw_rect(Rect2(0,87,1440,813),Color(0.02,0.055,0.065,0.38))
 	if menu:
 		draw_titan(Vector2(1020,598),1.15)
@@ -865,9 +978,9 @@ func _draw() -> void:
 		for feet in party_feet: draw_ellipse_shadow(feet)
 		draw_combat_fx()
 		box(Rect2(35,638,1370,232),Color(0.03,0.07,0.1,0.94),Color("596b68"))
-	elif model.phase == "battle":
+	elif display_phase() == "battle":
 		box(Rect2(25,100,1000,64),Color(0.025,0.045,0.07,0.88))
-		box(Rect2(25,548,610,25),Color(0.025,0.045,0.07,0.88))
+		box(Rect2(25,548,725,25),Color(0.025,0.045,0.07,0.88))
 		draw_titan(Vector2(865,525),0.90)
 		for i in range(3):
 			draw_ellipse_shadow(party_feet[i])
@@ -878,13 +991,13 @@ func _draw() -> void:
 				draw_set_transform(Vector2.ZERO)
 		draw_combat_fx()
 		box(Rect2(25,578,1390,303),Color(0.03,0.07,0.1,0.94),Color("39484c"))
-		box(Rect2(25,175,320,353),Color(0.03,0.07,0.1,0.88))
-		var hp: float = float(model.boss.get("hp",1))/maxf(1,float(model.boss.get("max_hp",1)))
+		box(Rect2(25,175,320,368),Color(0.03,0.07,0.1,0.88))
+		var hp: float = float(shown.boss.get("hp",1))/maxf(1,float(shown.boss.get("max_hp",1)))
 		draw_rect(Rect2(530,135,490,6),Color("3b4545"))
 		draw_rect(Rect2(530,135,490*hp,6),GOLD)
-	elif model.phase == "map":
+	elif display_phase() == "map":
 		box(Rect2(45,312,1350,197),Color(0.025,0.06,0.075,0.90),Color("596b68"))
-		var node: int=int(model.run.get("node",0))
+		var node: int=int(shown.run.get("node",0))
 		for i in range(9):
 			var x: float=110+i*145
 			var y: float=416
@@ -901,12 +1014,12 @@ func _draw() -> void:
 				draw_colored_polygon(PackedVector2Array([Vector2(x-13,y-9),Vector2(x-6,y-2),Vector2(x,y-13),Vector2(x+6,y-2),Vector2(x+13,y-9),Vector2(x+10,y+11),Vector2(x-10,y+11)]),shade)
 			else: draw_rect(Rect2(x-6,y-6,12,12),shade)
 	else:
-		var vignette_key: String=model.phase
+		var vignette_key: String=display_phase()
 		if vignette_key in vignettes:
 			draw_texture_rect(vignettes[vignette_key],Rect2(900,104,512,384),false)
-		elif model.phase == "defeat":
+		elif display_phase() == "defeat":
 			draw_titan(Vector2(1080,510),0.7)
-		elif model.phase == "victory":
+		elif display_phase() == "victory":
 			for feet in victory_feet:
 				draw_ellipse_shadow(feet)
 	box(Rect2(0,0,1440,87),Color(0.035,0.065,0.09,0.95))
@@ -980,19 +1093,21 @@ func draw_ellipse_shadow(pos: Vector2) -> void:
 	draw_set_transform(Vector2.ZERO)
 
 func _exit_tree() -> void:
+	if is_instance_valid(fx_director): fx_director.clear()
 	if is_instance_valid(audio):
 		audio.stop()
 		audio.stream = null
 
 func draw_titan(origin: Vector2, scale_factor: float) -> void:
+	var shown = battle_view()
 	var variant: int=0
 	var cut: Array=[false,false,false]
 	var target: int=-1
-	if not menu and (model.phase in ["battle","defeat"] or finisher_active()):
-		variant=clampi(int(model.boss.get("tier",1))-1,0,2)
-		if model.boss.get("name","")=="The Bellkeeper": variant=1
-		for i in range(mini(3,model.parts.size())):
-			cut[i]=model.parts[i].get("severed",false)
+	if not menu and (display_phase() in ["battle","defeat"] or finisher_active()):
+		variant=clampi(int(shown.boss.get("tier",1))-1,0,2)
+		if shown.boss.get("name","")=="The Bellkeeper": variant=1
+		for i in range(mini(3,shown.parts.size())):
+			cut[i]=shown.parts[i].get("severed",false)
 		target=selected_part
 	var dissolve: float=0.0
 	if finisher_active():
@@ -1088,6 +1203,7 @@ func apply_language_theme() -> void:
 		local_theme.set_font("font", "TooltipLabel", font)
 		local_theme.set_font_size("font_size", "TooltipLabel", 17)
 		ui.theme = local_theme
+	if is_instance_valid(fx_director): fx_director.font = font
 	get_window().title = display_text("ASHEN OATH — The Hollow Crown")
 
 func toggle_language() -> void:
@@ -1098,7 +1214,7 @@ func toggle_language() -> void:
 	refresh(false)
 
 func should_show_first_battle_coach() -> bool:
-	if not coach_eligible or coach_open or recovery_notice_open or save_error_open or menu or model.phase != "battle" or help_open or build_open or not confirmation.is_empty(): return false
+	if not coach_eligible or coach_open or recovery_notice_open or save_error_open or menu or model.phase != "battle" or help_open or build_open or details_open or not confirmation.is_empty(): return false
 	if int(model.meta.get("runs",0)) != 0 or int(model.run.get("battles_won",0)) != 0 or model.round_number != 1 or bool(model.run.get("first_battle_coach_seen",false)): return false
 	for hero in model.heroes:
 		if bool(hero.acted): return false
@@ -1222,4 +1338,305 @@ func show_save_error() -> void:
 
 func show_language_button() -> void:
 	var language_button = button("L  한국어" if Localization.get_language() == "ko" else "L  English", LANGUAGE_RECT, toggle_language, false, false, true)
-	language_button.tooltip_text = display_text("L / Change language (한국어 / English)")
+	set_detail(language_button, display_text("L / Change language (한국어 / English)"))
+
+# CP13 compact display helpers. These controls never change combat rules.
+func raw_label(text: String, pos: Vector2, text_size: int = 18, shade: Color = PALE, width: float = 260) -> Label:
+	var label = label_at("",pos,text_size,shade,width)
+	label.text = text
+	label.size.y = text_size+5
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
+
+func icon_stat(kind: String, text: String, pos: Vector2, shade: Color = PALE, text_size: int = 18, width: float = 130) -> Label:
+	var icon = TextureRect.new()
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.texture = BattleIcons.texture(kind)
+	icon.position = pos+Vector2(0,1)
+	icon.size = Vector2(21,21)
+	icon.set_meta("compact_size",Vector2(21,21))
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.modulate = shade
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.set_meta("symbol",kind)
+	ui.add_child(icon)
+	var label = raw_label(text,pos+Vector2(27,0),text_size,shade,maxf(1,width-27))
+	label.set_meta("symbol",kind)
+	return label
+
+func battle_input_open() -> bool:
+	return not menu and model.phase == "battle" and not presentation_active() and not help_open and not build_open and not details_open and confirmation.is_empty() and not coach_open and not recovery_notice_open and not save_error_open
+
+func set_detail(control: Control, text: String, inspect_id: String = "") -> void:
+	# No native tooltip is created, so Off can dismiss a visible popup immediately.
+	control.tooltip_text = ""
+	control.set_meta("detail_text",text)
+	control.set_meta("inspect_id",inspect_id)
+	if not inspect_id.is_empty(): detail_controls.append(control)
+	if control is Label: control.mouse_filter = Control.MOUSE_FILTER_STOP
+	control.mouse_entered.connect(func():
+		if control.is_queued_for_deletion(): return
+		show_detail_popup(control))
+	control.mouse_exited.connect(func():
+		if tooltip_owner == control: hide_detail_popup())
+	control.focus_entered.connect(func(): show_detail_popup(control))
+	control.focus_exited.connect(func():
+		if tooltip_owner == control: hide_detail_popup())
+
+func hide_detail_popup() -> void:
+	if is_instance_valid(tooltip_panel):
+		tooltip_panel.free()
+	tooltip_panel = null
+	tooltip_owner = null
+	if is_instance_valid(inspection_ring): inspection_ring.free()
+	inspection_ring = null
+
+func show_detail_popup(control: Control, keyboard: bool = false) -> void:
+	hide_detail_popup()
+	if not is_instance_valid(control) or control.is_queued_for_deletion() or finisher_active(): return
+	# Underlying battle controls must not surface through any modal overlay.
+	if not str(control.get_meta("inspect_id","")).is_empty() and not battle_input_open(): return
+	if keyboard:
+		inspection_ring = Panel.new()
+		inspection_ring.position = control.position-Vector2(3,3)
+		inspection_ring.size = control.size+Vector2(6,6)
+		inspection_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		inspection_ring.add_theme_stylebox_override("panel",style(Color.TRANSPARENT,TEAL))
+		inspection_ring.z_index = 90
+		add_child(inspection_ring)
+	if not Localization.tooltips_enabled: return
+	var text: String = str(control.get_meta("detail_text",""))
+	if text.is_empty(): return
+	tooltip_owner = control
+	tooltip_panel = PanelContainer.new()
+	tooltip_panel.name = "BattleDetailTooltip"
+	tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tooltip_panel.z_index = 100
+	tooltip_panel.add_theme_stylebox_override("panel",style(Color("101c24"),GOLD))
+	var label = Label.new()
+	label.text = text
+	label.custom_minimum_size.x = 408
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_override("font",font)
+	label.add_theme_font_size_override("font_size",17)
+	label.add_theme_color_override("font_color",PALE)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tooltip_panel.add_child(label)
+	add_child(tooltip_panel)
+	tooltip_panel.size.x = 440
+	tooltip_panel.reset_size()
+	var height: float = tooltip_panel.get_combined_minimum_size().y
+	var position_y: float = control.position.y+control.size.y+8
+	if position_y+height>885: position_y = control.position.y-height-8
+	tooltip_panel.position = Vector2(clampf(control.position.x,15,985),clampf(position_y,95,maxf(95,885-height)))
+
+func inspect_next(direction: int) -> void:
+	if not battle_input_open() or detail_controls.is_empty(): return
+	inspection_index = posmod(inspection_index+direction,detail_controls.size())
+	show_detail_popup(detail_controls[inspection_index],true)
+
+func inspect_by_id(id: String) -> void:
+	for i in range(detail_controls.size()):
+		if str(detail_controls[i].get_meta("inspect_id","")) == id:
+			inspection_index = i
+			show_detail_popup(detail_controls[i],true)
+			return
+
+func toggle_tooltips() -> void:
+	Localization.tooltips_enabled = not Localization.tooltips_enabled
+	if not Localization.save_preferences(): message = "The tooltip preference could not be saved."
+	elif message == "The tooltip preference could not be saved.": message = ""
+	hide_detail_popup()
+	refresh(false)
+
+func show_battle_details() -> void:
+	for child in ui.get_children():
+		if child is Button: child.focus_mode = Control.FOCUS_NONE
+	var blocker = ColorRect.new()
+	blocker.color = Color(0,0,0,0.78)
+	blocker.size = Vector2(1440,900)
+	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(blocker)
+	panel_at(Rect2(170,105,1100,730))
+	label_at("BATTLE DETAILS",Vector2(204,128),30,GOLD,1000)
+	var scroll = ScrollContainer.new()
+	details_scroll = scroll
+	scroll.focus_mode = Control.FOCUS_ALL
+	scroll.position = Vector2(206,190)
+	scroll.size = Vector2(1025,540)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	ui.add_child(scroll)
+	var column = VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation",18)
+	scroll.add_child(column)
+	var entries: Array[String] = [
+		display_text("SYMBOL GUIDE")+"\n"+display_text("Heart: HP. Diamond: Focus cost, or recovery with +. Shield: defense. Attack-type icon + number: part damage. Crosshair: marked target. Broken shield: break. Split blade: sever. Type icons match weaknesses."),
+		display_text("Tab / Shift+Tab inspects controls without acting. 1–3 selects a hero; Up/Down selects a part. Q/W/E attacks; R defends. Space ends the round. D opens these details, even with tooltips off.")
+	]
+	# Visible, font-independent icon key remains available when tooltips are off.
+	var key_row = HBoxContainer.new()
+	key_row.add_theme_constant_override("separation",22)
+	column.add_child(key_row)
+	for pair: Array in [["hp","HP"],["focus","Focus"],["shield","Shield"],["damage","Damage"],["target","Target"],["break","Break"],["sever","Sever"]]:
+		var item = HBoxContainer.new()
+		var icon = TextureRect.new()
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.texture = BattleIcons.texture(pair[0])
+		icon.custom_minimum_size = Vector2(22,22)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		icon.set_meta("compact_size",Vector2(22,22))
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		item.add_child(icon)
+		var name_label = Label.new()
+		name_label.text = display_text(pair[1])
+		name_label.add_theme_font_size_override("font_size",16)
+		item.add_child(name_label)
+		key_row.add_child(item)
+	var type_row = HBoxContainer.new()
+	type_row.add_theme_constant_override("separation",28)
+	column.add_child(type_row)
+	for kind: String in ["slash","blunt","pierce","arcane","ready","acted","guard","fallen"]:
+		var item = HBoxContainer.new()
+		var icon = TextureRect.new()
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.texture = BattleIcons.texture(kind)
+		icon.custom_minimum_size = Vector2(22,22)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		icon.set_meta("compact_size",Vector2(22,22))
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		item.add_child(icon)
+		var name_label = Label.new()
+		name_label.text = display_text(kind)
+		name_label.add_theme_font_size_override("font_size",14)
+		item.add_child(name_label)
+		type_row.add_child(item)
+	var threat: Dictionary = model.preview_intent()
+	for attack: Dictionary in threat.attacks:
+		entries.append(display_text("LIVE OMEN")+" / "+display_text(attack.name)+" / "+display_text(attack.source)+"\n"+display_text(attack.description)+"\n"+display_text(attack.counterplay))
+	if not threat.rhythm.is_empty(): entries.append(display_text("NEXT ROUND")+"\n"+display_text(threat.rhythm.description))
+	for control in detail_controls:
+		var id: String = str(control.get_meta("inspect_id",""))
+		if id == "part_%d" % selected_part or id == "hero_%d" % selected_hero or id.begins_with("skill_"):
+			entries.append(str(control.get_meta("detail_text","")))
+	var history: Array = model.log.slice(maxi(0,model.log.size()-8))
+	entries.append(display_text("RECENT HISTORY")+"\n"+display_text("\n".join(history)))
+	for entry in entries:
+		var label = Label.new()
+		label.text = entry
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.add_theme_font_override("font",font)
+		label.add_theme_font_size_override("font_size",18)
+		label.add_theme_color_override("font_color",PALE)
+		column.add_child(label)
+	button("D / ESC / RETURN",Rect2(911,761,320,48),func(): details_open=false; refresh(false),true)
+	scroll.grab_focus()
+
+func compact_title(control: Button) -> void:
+	# Button has no vertical text alignment. Keep its accessible text and draw
+	# the title in a non-interactive overlay instead of inflating style margins.
+	for property: String in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_disabled_color","font_hover_pressed_color"]:
+		control.add_theme_color_override(property,Color.TRANSPARENT)
+	var label = raw_label(control.text,control.position+Vector2(12,7),control.get_theme_font_size("font_size"),Color("798487") if control.disabled else PALE,control.size.x-24)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+func show_tooltip_setting(rect: Rect2) -> void:
+	var control = button("T / Tooltips on" if Localization.tooltips_enabled else "T / Tooltips off",rect,toggle_tooltips,false,false,false,16)
+	set_detail(control,display_text("Toggle hover and keyboard inspection tooltips. This display preference is saved separately from your journey. Details remain available with D."))
+
+# FX presentation boundary. The model is authoritative throughout this timeline.
+func fx_busy() -> bool:
+	return is_instance_valid(fx_director) and fx_director.busy()
+func presentation_active() -> bool:
+	return finisher_active() or fx_busy()
+func battle_view():
+	return fx_director.view if fx_busy() and fx_director.view != null else model
+func display_phase() -> String:
+	return "battle" if fx_busy() else model.phase
+func _hero_animation_event(animation: String, event_name: String, hero: int) -> void:
+	if animation == "attack" and event_name == "impact" and fx_busy(): fx_director.impact(hero)
+func _fx_impact(event: Dictionary) -> void:
+	fx_last_event = event
+	if event.kind == "hero":
+		actors[int(event.hero_index)].playback_speed = 0.0
+		hit_flash = 0.28
+		tone(180 if event.severs else (240 if event.breaks else 310),0.08)
+	elif event.kind == "enemy":
+		for i in range(actors.size()):
+			if int(event.attack.losses[i]) > 0:
+				actors[i].play_state("death" if event.display_heroes[i].hp <= 0 else "hurt",true)
+		if event.attack.status not in ["warded","cancelled","missed"]: tone(90,0.08)
+		elif not event.wards.is_empty(): tone(360,0.07)
+	if not fx_pending_finisher.is_empty(): _start_pending_finisher()
+	refresh(false)
+func _start_pending_finisher() -> void:
+	finisher_cuts = fx_pending_finisher.cuts.duplicate()
+	finisher_action = fx_pending_finisher.action
+	finisher_awards = fx_pending_finisher.awards
+	finisher_remaining = FINISHER_DURATION
+	fx_pending_finisher.clear()
+func _fx_complete() -> void:
+	for actor in actors: actor.playback_speed=1.0
+	if not fx_pending_finisher.is_empty(): _start_pending_finisher()
+	if not finisher_active() and model.phase == "battle":
+		if model.parts[selected_part].severed:
+			for part in range(model.parts.size()):
+				if not model.parts[part].severed:
+					selected_part=part
+					break
+		for hero in range(model.heroes.size()):
+			if model.heroes[hero].hp > 0 and not model.heroes[hero].acted:
+				selected_hero=hero
+				break
+	refresh(false)
+func skip_combat_presentation() -> void:
+	if not fx_busy(): return
+	fx_director.skip()
+	# Consume one skip as presentation only. Newly-created reward controls cannot
+	# receive that same press/release, and no command or settlement is replayed.
+	if finisher_active(): finish_presentation()
+func perform(index: int) -> void:
+	if presentation_active() or coach_open or recovery_notice_open or save_error_open or details_open: return
+	if fx_legacy_mode:
+		_perform_legacy(index)
+		return
+	var before = FxSnapshot.capture(model)
+	var hero: int = selected_hero
+	var part: int = selected_part
+	if not model.act(hero,index,part):
+		message=model.last_error
+		refresh(false)
+		return
+	var after = FxSnapshot.capture(model)
+	fx_event_id += 1
+	var event: Dictionary = FxEvent.hero_event(fx_event_id,before,after,hero,index,part)
+	fx_actor=hero
+	fx_part=part
+	fx_kind=event.damage_type
+	fx_damage=event.actual_boss_loss
+	if before.phase == "battle" and after.phase == "reward":
+		fx_pending_finisher={"cuts":preload("res://combat_fx/fx_anchors.gd").cuts(before.parts),"action":"%s / %s" % [before.heroes[hero].name.to_upper(),before.heroes[hero].skills[index].name.to_upper()],"awards":"+%d GOLD / +%d UNBANKED ASH" % [int(after.run.gold)-int(before.run.gold),int(after.run.essence)-int(before.run.essence)]}
+	message=""
+	help_open=false
+	build_open=false
+	confirmation=""
+	fx_director.enqueue([event])
+	actors[hero].play_state("idle" if event.kind=="guard" else "attack",true)
+	refresh() # Save the final model immediately, before any presentation delay.
+func finish_round() -> void:
+	if presentation_active() or model.phase != "battle": return
+	if fx_legacy_mode:
+		_finish_round_legacy()
+		return
+	confirmation=""
+	var before = FxSnapshot.capture(model)
+	var forecast: Dictionary = model.preview_intent().duplicate(true)
+	if not model.end_round(): return
+	var after = FxSnapshot.capture(model)
+	var events: Array[Dictionary] = FxEvent.round_events(fx_event_id+1,before,after,forecast)
+	fx_event_id += events.size()
+	fx_director.enqueue(events)
+	refresh() # End-round RNG, defeat settlement and next intent are already durable.

@@ -1,4 +1,5 @@
 extends SceneTree
+const FxTest = preload("res://combat_fx/test_helpers.gd")
 const Localization = preload("res://localization.gd")
 var checks: int = 0
 func check(value: bool, text: String) -> void:
@@ -28,15 +29,19 @@ func run_tests() -> void:
 	scene.select_hero(0)
 	scene.select_part(0)
 	scene.perform(1)
+	FxTest.settle(scene)
 	await process_frame
 	check(scene.model.heroes[0].acted, "skill handler spends actor action")
 	scene.select_hero(1)
 	scene.perform(3)
+	FxTest.settle(scene)
 	scene.select_hero(2)
 	scene.perform(3)
+	FxTest.settle(scene)
 	await process_frame
 	var old_round: int = scene.model.round_number
 	scene.finish_round()
+	FxTest.settle(scene)
 	await process_frame
 	check(scene.model.round_number == old_round+1, "end round handler advances")
 	scene.help_open=true

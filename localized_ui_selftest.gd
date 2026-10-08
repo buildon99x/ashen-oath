@@ -1,4 +1,5 @@
 extends SceneTree
+const FxTest = preload("res://combat_fx/test_helpers.gd")
 ## CP12 bilingual scene-tree, shaping, layout and lifecycle checks. Native QA is separate.
 const L = preload("res://localization.gd")
 const Model = preload("res://model.gd")
@@ -131,9 +132,9 @@ func run_tests() -> void:
 				await draw_case(scene, language + " capped Defend recovery")
 				var found: bool = false
 				for child in scene.ui.get_children():
-					if child is Button and child.position.x == 790 and child.position.y == 689:
+					if child is Label and child.position == Vector2(942,747) and child.get_meta("symbol", "") == "focus":
 						var gain: int = mini(2,6-focus_left)
-						found = child.text.contains("집중 +%d" % gain) if language == "ko" else child.text.contains("+%d Focus" % gain)
+						found = child.text == "+%d" % gain
 				check(found, "Defend displays actual capped Focus gain")
 		fixture(scene)
 		scene.model.start_battle(1)
@@ -158,6 +159,7 @@ func run_tests() -> void:
 		scene.coach_open = false
 		scene.model.boss.hp = 1
 		scene.perform(0)
+		FxTest.settle(scene)
 		await draw_case(scene, language + " finisher")
 		var reward_snapshot: Dictionary = scene.model.describe()
 		var finisher_time: float = scene.finisher_remaining
@@ -189,6 +191,7 @@ func run_tests() -> void:
 	var before: Dictionary = scene.model.describe()
 	var rng_state: int = scene.model.rng.state
 	scene.perform(0)
+	FxTest.settle(scene)
 	check(scene.model.describe() == before, "Coach blocks accidental combat hotkeys")
 	scene.toggle_language()
 	check(scene.model.describe() == before and scene.model.rng.state == rng_state, "Language switch changes no model state or RNG")
