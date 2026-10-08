@@ -1,6 +1,6 @@
 # ASHEN OATH — The Hollow Crown
 
-![Actual native battle screen](verification/native-cp4-battle.jpg)
+![Actual native battle screen](verification/native-cp6-firelit-battle.jpg)
 
 [실제 플레이·비교 보고서](TEST_REPORT.html) · [빌드 방법](BUILDING.md) · [원작과 구분/출처](PROVENANCE.md)
 
@@ -70,3 +70,8 @@ V로 스튜디오를 열어 1/2/3 영웅 선택, 방향키 이동, Space 공격,
 
 ![최신 실제 사건 화면](verification/native-cp5-event.jpg)
 ![최신 실제 지도](verification/native-cp5-map.jpg)
+
+## 이미지 생성 전투 배경 · 체크포인트 6
+사용자가 제공한 배경 참고 이미지의 인디고 그림자·청록 석재·주황 불빛을 바탕으로 내장 이미지 생성 도구에서 새로운 가로형 폐허 안뜰을 제작했습니다. 전투 화면에 적용하고 중앙 바닥을 캐릭터용으로 비웠습니다. 원본 PNG는 별도 보존, 프로젝트에는 같은 픽셀 크기의 WebP(quality90)를 사용합니다. 캐릭터/UI를 합성한 그림이 아니라 실제 Godot 실행 창을 위에 첨부했습니다.
+
+최종 소스의 native 실행·공격·재시작 복구 및 전체 자동 검사가 통과했습니다. **이 체크포인트의 새 실행 파일은 만들지 못했습니다. 공식 export template 복구가 중단되어 기존 실행 파일 백업은 체크포인트 5입니다.** 최신 배경은 Godot에서 이 소스를 실행하면 보입니다.

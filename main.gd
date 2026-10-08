@@ -7,6 +7,7 @@ const TEAL = Color("78c9be")
 const INK = Color("0e171e")
 const PALE = Color("e4e5db")
 var model = Model.new()
+var firelit_arena: Texture2D = preload("res://assets/environments/firelit_arena.webp")
 var forest: Texture2D = preload("res://assets/cinder_forest.png")
 var titan_sprites: Array = []
 var hero_sprites: Array = []
@@ -470,7 +471,7 @@ func _draw() -> void:
 		draw_circle(Vector2(x,y),1.5,Color(0.8,0.68,0.43,0.2+0.15*sin(clock_time+i)))
 	if environments.size()==3:
 		var biome: int=clampi(int(model.run.get("node",0))/3,0,2)
-		draw_texture_rect(environments[biome] if environments.size()==3 else forest,Rect2(0,0,1440,900),false)
+		draw_texture_rect(firelit_arena if not menu and model.phase=="battle" else environments[biome],Rect2(0,0,1440,900),false)
 		if menu:
 			draw_rect(Rect2(0,80,680,820),Color(0.035,0.06,0.075,0.65))
 		# soft grounded arena shadow
@@ -481,6 +482,8 @@ func _draw() -> void:
 	if menu:
 		draw_titan(Vector2(1020,598),1.15)
 	elif model.phase == "battle":
+		box(Rect2(25,100,1000,64),Color(0.025,0.045,0.07,0.88))
+		box(Rect2(25,548,610,25),Color(0.025,0.045,0.07,0.88))
 		draw_titan(Vector2(865,525),0.90)
 		for i in range(3):
 			draw_ellipse_shadow(party_feet[i])

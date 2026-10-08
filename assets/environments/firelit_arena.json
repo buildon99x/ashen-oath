@@ -1,0 +1,14 @@
+{
+  "asset": "firelit_arena.webp",
+  "generation": "Built-in image_gen; one original generated arena using supplied image as style reference",
+  "reference_included": false,
+  "original_dimensions": [
+    1586,
+    992
+  ],
+  "runtime_encoding": "WebP quality90; no crop, recolor or redraw",
+  "original_sha256": "c7d2c64b41a2f91b3e44652717f783798ceda7d030c23f6b92996496fbd08add",
+  "runtime_sha256": "8597cb36d5f3c8f472d5f9920c0ac4b8cc8c53fa95ef9fbddc68c5c30d2830e2",
+  "prompt": "Original 16:10 elevated three-quarter ruined temple courtyard: indigo-violet masonry shadows, teal paving, orange braziers and magenta embers. Broken arches frame upper third and sides. Clear central floor for party/boss. Preserve crisp pixel clusters and layered depth. No characters, UI, text, logos or watermark. Reference guides style only; create new layout.",
+  "scope": "Battle phases only; existing map/event environments retained."
+}
