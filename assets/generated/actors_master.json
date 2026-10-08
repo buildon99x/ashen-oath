@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "generator": "OpenAI built-in image generation tool",
+  "generation_date": "2026-10-08",
+  "size": [
+    1254,
+    1254
+  ],
+  "master_sha256": "f1d886d719ea2f16c37b937d91f6d6306d7262594e1fff873528b5bc5b96c461",
+  "hero_poses": 12,
+  "heroes": [
+    "Mara / armored knight",
+    "Ivo / staff-and-book mage",
+    "Sable / hooded scout"
+  ],
+  "directions": [
+    "down",
+    "left",
+    "right",
+    "up"
+  ],
+  "monster_variants": [
+    "Cinder Colossus",
+    "Bellkeeper",
+    "Hollow sovereign"
+  ],
+  "animation": "Original runtime mesh rig; five existing state clocks preserved. These are 12 generated facing poses, not 372 independently generated animation drawings.",
+  "integration": "Master image is unchanged. Atlas regions, mesh deformation, alpha-floor cleanup, portrait crops and sever masks are evaluated at runtime.",
+  "reference_handling": "References inspected separately; no third-party reference images included in the public source package."
+}

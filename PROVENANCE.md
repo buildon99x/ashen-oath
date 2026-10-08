@@ -28,3 +28,10 @@ Pixelify Sans is the only newly bundled third-party visual asset: unmodified fon
 
 ## Checkpoint 6: generated battle arena
 The user-provided dungeon reference was visually inspected (isometric ruined corridor, indigo shadows, teal paving, orange firelight). The built-in image_gen tool produced one new 1586×992 wide courtyard with a different layout and clear combat floor. It is not a procedural substitute and not a crop of the supplied reference. The original output is retained separately; `assets/environments/firelit_arena.webp` is a same-dimension quality90 WebP encoding for game delivery. No recoloring or hand-painted reconstruction was performed. The metadata JSON records provenance, prompt summary and hashes. The supplied reference itself is excluded from this public repository. Existing authored actors/UI remain separate runtime layers. The full generator prompt is in `assets/environments/firelit_arena_prompt.txt`.
+
+## Checkpoint 7: generated actors
+The previously generated transparent 1254×1254 master is integrated unchanged as `assets/generated/actors_master.webp`. It contains three heroes with four independently drawn facing poses each, and three distinct monster designs. No third-party reference files are included.
+
+`generated_actor_art.gd` selects runtime atlas regions and animates a continuous mesh, preserving the five animation clocks and attack event semantics. These are 12 image-generated hero poses with rigged animation, not 372 independently image-generated drawings. The older authored sheets remain as provenance/regression fixtures and fallback assets. Portraits also come from the new master. `generated_monster.gd` uses runtime head/arm/leg alpha masks to preserve the gameplay severing states. The master SHA-256 and integration details are in `assets/generated/actors_master.json`.
+
+Native Godot source execution and on-screen combat/studio QA succeeded. No new native executable was exported because the official Windows/Linux export templates remain unavailable. Existing checkpoint-5 binaries do not contain checkpoint-6 or checkpoint-7 art.

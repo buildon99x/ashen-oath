@@ -1,6 +1,8 @@
 extends Node2D
 
 const Model = preload("res://model.gd")
+const ActorArt = preload("res://generated_actor_art.gd")
+const MonsterArt = preload("res://generated_monster.gd")
 const HeroAnimation = preload("res://animated_hero.gd")
 const GOLD = Color("d6b77d")
 const TEAL = Color("78c9be")
@@ -10,6 +12,7 @@ var model = Model.new()
 var firelit_arena: Texture2D = preload("res://assets/environments/firelit_arena.webp")
 var forest: Texture2D = preload("res://assets/cinder_forest.png")
 var titan_sprites: Array = []
+var generated_monster: Node2D
 var hero_sprites: Array = []
 var actors: Array[Node2D]=[]
 var environments: Array[Texture2D]=[]
@@ -38,11 +41,8 @@ func _ready() -> void:
 	if ResourceLoader.exists("res://assets/fonts/PixelifySans.ttf"):
 		font=load("res://assets/fonts/PixelifySans.ttf")
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-	for tier in range(1,4):
-		var layers: Array=[]
-		for part in range(3):
-			layers.append(load("res://assets/titan_%d_%d.png" % [tier,part]))
-		titan_sprites.append(layers)
+	generated_monster=MonsterArt.new()
+	add_child(generated_monster)
 	for i in range(3):
 		hero_sprites.append(load("res://assets/hero_%d.png" % i))
 	model.load_meta()
@@ -69,6 +69,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	clock_time += delta
+	generated_monster.visible=menu or model.phase in ["battle","victory","defeat"]
 	hit_flash = maxf(0.0, hit_flash - delta * 2.0)
 	fx_time=maxf(0.0,fx_time-delta)
 	enemy_flash=maxf(0.0,enemy_flash-delta*2)
@@ -255,8 +256,8 @@ func show_battle() -> void:
 		var t: String = "%d  %s  /  %s\nHP %d/%d   MP %d/%d  %s" % [i+1, h.get("name",""), h.get("role",""), h.get("hp",0), h.get("max_hp",0), h.get("mp",0), h.get("max_mp",0), "ACTED" if h.get("acted",false) else "READY"]
 		var hero_button=button(t, Rect2(40+i*455, 592, 440, 84), select_hero.bind(i), i == selected_hero, h.get("hp",0)<=0)
 		var portrait=AtlasTexture.new()
-		portrait.atlas=load("res://assets/heroes/"+["mara","ivo","sable"][i]+".png")
-		portrait.region=Rect2(22,4,52,48)
+		portrait.atlas=ActorArt.TEXTURE
+		portrait.region=ActorArt.PORTRAIT_REGIONS[i]
 		hero_button.icon=portrait
 		hero_button.expand_icon=true
 		hero_button.add_theme_constant_override("icon_max_width",42)
@@ -390,9 +391,11 @@ func party_summary(y: int) -> void:
 		panel_at(Rect2(x,y,410,78))
 		var portrait=TextureRect.new()
 		var atlas=AtlasTexture.new()
-		atlas.atlas=load("res://assets/heroes/"+["mara","ivo","sable"][i]+".png")
-		atlas.region=Rect2(22,4,52,48)
+		atlas.atlas=ActorArt.TEXTURE
+		atlas.region=ActorArt.PORTRAIT_REGIONS[i]
 		portrait.texture=atlas
+		portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		portrait.position=Vector2(x+12,y+14)
 		portrait.size=Vector2(52,48)
 		portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -597,27 +600,20 @@ func _exit_tree() -> void:
 		audio.stream = null
 
 func draw_titan(origin: Vector2, scale_factor: float) -> void:
-	var tier: int = 1
+	var variant: int=0
 	var cut: Array=[false,false,false]
+	var target: int=-1
 	if not menu and model.phase=="battle":
-		tier=int(model.boss.get("tier",1))
+		variant=clampi(int(model.boss.get("tier",1))-1,0,2)
+		if model.boss.get("name","")=="The Bellkeeper": variant=1
 		for i in range(mini(3,model.parts.size())):
 			cut[i]=model.parts[i].get("severed",false)
-	if cut[0]:
-		origin.y+=80*scale_factor
-	var pos: Vector2=origin+Vector2(-170,-440)*scale_factor
-	var dimension: Vector2=Vector2(340,440)*scale_factor
+		target=selected_part
+	# The generated actor is a separate scene layer, keeping all UI above it.
+	generated_monster.configure(variant,origin,scale_factor,cut,clock_time,hit_flash,target)
 	draw_set_transform(origin,0,Vector2(1,0.22))
 	draw_circle(Vector2.ZERO,125*scale_factor,Color(0,0,0,0.28))
 	draw_set_transform(Vector2.ZERO)
-	for part in range(3):
-		if not cut[part]:
-			var bob: float=sin(clock_time*1.4)*2 if part>0 else 0.0
-			draw_texture_rect(titan_sprites[tier-1][part],Rect2(pos+Vector2(0,bob),dimension),false,Color(1+hit_flash,1+hit_flash,1+hit_flash))
-	if not menu and model.phase=="battle" and selected_part<3 and not cut[selected_part]:
-		var offsets: Array=[Vector2(0,-65),Vector2(0,-242),Vector2(0,-371)]
-		var target: Vector2=origin+offsets[selected_part]*scale_factor
-		draw_arc(target,27*scale_factor,clock_time,clock_time+4.9,24,GOLD,2)
 
 func draw_hero(pos: Vector2,index: int) -> void:
 	if fx_time>0.0 and fx_actor==index and fx_kind!="guard":
@@ -637,7 +633,7 @@ func draw_combat_fx() -> void:
 		return
 	var progress: float=1.0-fx_time/0.85
 	var start: Vector2=party_feet[fx_actor]+Vector2(18,-54)
-	var offsets: Array=[Vector2(0,-65),Vector2(0,-242),Vector2(0,-371)]
+	var offsets: Array=[Vector2(0,-52),Vector2(0,-190),Vector2(0,-309)]
 	var target: Vector2=Vector2(865,525)+offsets[fx_part]*0.90
 	if model.parts.size()>0 and model.parts[0].get("severed",false):
 		target.y+=72.0

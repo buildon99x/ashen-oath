@@ -114,7 +114,7 @@ func _handle_movement(delta: float) -> void:
 	if paused or hero.state in ["attack", "hurt", "death"]:
 		return
 	var direction: Vector2 = Vector2.ZERO
-	# Cardinal walking makes the four hand-authored facings explicit.
+	# Cardinal walking makes the four independently generated facings explicit.
 	if Input.is_key_pressed(KEY_LEFT):
 		direction = Vector2.LEFT
 	elif Input.is_key_pressed(KEY_RIGHT):
@@ -205,7 +205,7 @@ func _return_to_game() -> void:
 
 func _build_ui() -> void:
 	_label("A S H E N   O A T H", Vector2(38, 21), 25, GOLD)
-	_label("CHARACTER STUDIO  /  ORIGINAL DIRECTIONAL SPRITES", Vector2(40, 57), 13, TEAL)
+	_label("CHARACTER STUDIO  /  GENERATED ART + ANIMATION RIG", Vector2(40, 57), 13, TEAL)
 	_button("ESC  Back to game", Rect2(1182, 28, 220, 42), _return_to_game)
 	_label("THE WANDERERS", Vector2(54, 130), 16, GOLD)
 	for index in range(HERO_NAMES.size()):
@@ -228,7 +228,7 @@ func _build_ui() -> void:
 	_check("Checker", "C  Transparency checker", Vector2(52, 703), true, set_checker)
 	_label("ARROWS   Move in four directions\nSPACE   Attack     H   Hurt\nK   Death     R   Reset", Vector2(54, 761), 15, MUTED, Vector2(298, 73))
 	title_label = _label("", Vector2(420, 129), 25, PALE, Vector2(750, 37))
-	_label("96 × 112 px cells  /  2.5× preview  /  RGBA alpha", Vector2(420, 167), 14, MUTED)
+	_label("Image-generated poses  /  2.5× preview  /  live mesh animation", Vector2(420, 167), 14, MUTED)
 	_label("Hold arrow keys to walk", Vector2(1130, 138), 15, TEAL, Vector2(250, 30))
 	event_label = _label("Clips hold their foot anchor; movement is controlled separately", Vector2(420, 547), 13, MUTED, Vector2(970, 25))
 	status_label = _label("", Vector2(412, 597), 16, GOLD, Vector2(270, 32))

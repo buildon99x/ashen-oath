@@ -7,6 +7,9 @@ signal state_changed(animation: String)
 signal animation_finished(animation: String)
 signal animation_event(animation: String, event_name: String)
 
+const GeneratedArt = preload("res://generated_actor_art.gd")
+const ALPHA_SHADER: Shader = preload("res://assets/generated/actor_alpha.gdshader")
+
 const MANIFEST_PATH: String = "res://assets/heroes/manifest.json"
 const DEFAULT_MANIFEST: Dictionary = {
 	"frame_size": [96, 112], "anchor": [48, 101],
@@ -54,6 +57,9 @@ var _impact_emitted: bool = false
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var clean_alpha: ShaderMaterial = ShaderMaterial.new()
+	clean_alpha.shader = ALPHA_SHADER
+	material = clean_alpha
 	reload_assets()
 
 func reload_assets() -> void:
@@ -177,7 +183,9 @@ func sync_from(other: Node2D) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	if atlas_texture != null:
+	if GeneratedArt.TEXTURE != null:
+		GeneratedArt.draw_hero(self, hero_index, facing, state, frame, frame_count())
+	elif atlas_texture != null:
 		draw_texture_rect_region(atlas_texture, Rect2(-foot_anchor(), frame_size()), source_rect())
 	else:
 		# Keeps the scene inspectable before art import, without inventing a sprite.

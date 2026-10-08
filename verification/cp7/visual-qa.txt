@@ -1,0 +1,6 @@
+2026-10-08 UTC, actual Godot 4.6.3 native source window 1178x814.
+- Continued Cinder Colossus battle using mouse/keyboard. Generated three heroes and fire colossus rendered in the generated arena. Ivo Ash Spark and Sable Needle Shot severed the LOW part; the generated monster lost its legs and lowered its torso.
+- Opened studio with V. Visually inspected all 12 facings via Mara/Ivo/Sable controls. Held Right and Up movement, attack event, hurt, final held death frame and reset.
+- Visual iteration: replaced UI portraits with master-image face regions; improved final death from flattening into a rotated grounded fall.
+- Restarted final source with Dummy audio driver because cloud desktop has no audio device. New cycle -> relic -> relic -> Bellkeeper reached by normal UI interaction. Party portrait cards match new art.
+- Remaining limitation: animations are mesh-rigged from 12 image-generated poses; no claim of individually image-generated frame animations or commercial-reference parity. New exported binaries unavailable because official templates are absent.
