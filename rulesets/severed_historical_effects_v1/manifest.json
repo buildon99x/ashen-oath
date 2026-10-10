@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "profile_id": "severed_historical_effects_v1",
+  "target_version": "0.2.102",
+  "target_version_verified": false,
+  "reconstructed_utc": "2026-10-10",
+  "description": "Source-pinned historical descriptors adopted by the Ashen provisional runtime. This is a reconstruction, not byte-identical recovery and not a target-game rules profile.",
+  "sources": {
+    "official_3755930_v0.2.78": {
+      "kind": "historical_patch_delta",
+      "app_id": 3755930,
+      "version": "0.2.78",
+      "url": "https://steamcommunity.com/app/3755930/?l=russian",
+      "retrieved_utc": "2026-10-10",
+      "publication_label": "21 Aug",
+      "retrieval_note": "Official community page exposes the English v0.2.78 patch in a Russian-language page shell. The previously cited allnews route failed extraction in this research pass."
+    },
+    "official_4129400_v0.1.137": {
+      "kind": "historical_patch_delta",
+      "app_id": 4129400,
+      "version": "0.1.137",
+      "url": "https://store.steampowered.com/news/posts/?enddate=1778507195&feed=steam_community_announcements",
+      "retrieved_utc": "2026-10-10",
+      "publication_label": "11 May",
+      "retrieval_note": "Official Steam announcement feed identifies The Severed Gods Playtest, author quan.le, version v0.1.137. The source ID preserves the compatibility API's playtest app identity."
+    }
+  },
+  "rules": {
+    "defend.mp_grant": {
+      "source_id": "official_3755930_v0.2.78",
+      "status": "historical_not_target_verified",
+      "locator": "v0.2.78 > Gameplay & Balance > Defend MP change",
+      "summary": "Defend's nominal MP grant was raised from 10 to 15 in this historical patch.",
+      "requires": {"resolved_boundary": "defend_grant"},
+      "effects": [{"kind": "nominal_mp_recovery", "amount": 15}],
+      "limitations": "Does not establish timing, caps, costs, mitigation, duration, modifiers, recipient selection, or validity in EA 0.2.102."
+    },
+    "counter.normal_attack_relic_event": {
+      "source_id": "official_4129400_v0.1.137",
+      "status": "historical_not_target_verified",
+      "locator": "v0.1.137 > Balance / Tuning > Updated Counter",
+      "summary": "A counter using a normal attack triggers normal-attack relics in this historical patch.",
+      "requires": {"resolved_boundary": "resolved_counter", "uses_normal_attack": true},
+      "effects": [{"kind": "relic_hook", "event": "normal_attack"}],
+      "limitations": "Only emits the event descriptor; no automatic relic benefit, relic inventory, MP amount, trigger ordering, counter targeting, or universal counter mechanics are implied."
+    },
+    "parry.successful_action_scope": {
+      "source_id": "official_4129400_v0.1.137",
+      "status": "historical_not_target_verified",
+      "locator": "v0.1.137 > Balance / Tuning > Updated Parry behavior",
+      "summary": "Following a successful Parry, the historical patch permits the Hero to act and excludes NPC actions.",
+      "requires": {"resolved_boundary": "resolved_successful_parry"},
+      "effects": [{"kind": "action_scope", "actor_scope": "hero_only", "npc_actions": false}],
+      "limitations": "The caller must already have resolved success. Does not calculate success, cost, failure behavior, action count, queue insertion or order."
+    }
+  }
+}

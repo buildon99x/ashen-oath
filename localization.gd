@@ -14,6 +14,19 @@ static var _cache: Dictionary = {}
 static var _missing: Dictionary = {}
 
 const CATALOG: Dictionary = {
+	"Unknown combat profile.": "알 수 없는 전투 규칙입니다.",
+	"Only the current hero can allocate Boost.": "현재 차례인 영웅만 부스트를 배분할 수 있습니다.",
+	"Boost needs stored EP (maximum 3).": "부스트에는 보유 EP가 필요합니다(최대 3).",
+	"Choose a skill.": "스킬을 선택하세요.",
+	"Choose an intact part.": "절단되지 않은 부위를 선택하세요.",
+	"Wait for this hero's turn, choose an intact target, and check MP.": "이 영웅의 차례인지, 대상 부위가 남아 있는지, MP가 충분한지 확인하세요.",
+	"Historical Defend evidence is unavailable.": "방어 회복의 역사 규칙 근거를 불러올 수 없습니다.",
+	"Parry needs your turn, an intact height target and 5 MP.": "패링에는 현재 차례, 남아 있는 높이 대상, MP 5가 필요합니다.",
+	"Sever requires the current hero's normal turn.": "절단은 현재 영웅의 일반 차례에서 사용할 수 있습니다.",
+	"Sever requires an exposed zero-HP limb and 1 EP.": "절단에는 노출된 체력 0 부위와 EP 1이 필요합니다.",
+	"No actor is ready.": "행동 가능한 대상이 없습니다.",
+	"Ashen provisional: Boost adds one hit per EP; matching height deals full damage. MP is paid once.": "Ashen 임시 규칙: EP마다 타격 1회가 추가되며 높이가 맞으면 온전한 피해를 줍니다. MP는 한 번만 소비합니다.",
+	"Ashen provisional Defend: halve all incoming damage until next round; recover 15 MP.": "Ashen 임시 방어: 다음 라운드까지 모든 받는 피해를 절반으로 줄이고 MP 15를 회복합니다.",
 	"Halve incoming damage this round. Restore 2 focus and 3 HP.": "이번 라운드 받는 피해를 절반으로 줄이고 집중 2, 체력 3을 회복합니다.",
 	"A newer checkpoint exists.": "더 최신 체크포인트가 있습니다.",
 	"A newer checkpoint was saved by another window. Reload the saved journey before retrying.": "다른 창에서 더 최신 체크포인트를 저장했습니다. 저장된 여정을 다시 불러온 뒤 저장을 재시도하세요.",
@@ -360,6 +373,7 @@ const CATALOG: Dictionary = {
 }
 
 const TEMPLATES: Array[Array] = [
+	["NEXT HP %d (-%d)", "공격 후 HP {0} (-{1})"],
 	["%s defends: incoming damage halved; +2 focus, +%d HP.", "{0} 방어: 받는 피해 절반. 집중 +2, 체력 +{1}."],
 	["%s %d/5 · %s\n%s / next run", "{0} {1}/5 · {2}\n{3} / 다음 여정"],
 	["%d ash", "재 {0}"],

@@ -78,6 +78,8 @@ func run_tests() -> void:
 	scene._unhandled_key_input(escape)
 	check(scene.menu,"Escape cannot leave a fresh title screen blank")
 	scene.begin_run()
+	# This suite protects legacy saved-journey whole-round safeguards.
+	scene.model=fresh()
 	scene.model.start_battle(1)
 	scene.request_end_round()
 	check(scene.confirmation=="end_round" and scene.model.round_number==1,"Unspent actions open confirmation without advancing")

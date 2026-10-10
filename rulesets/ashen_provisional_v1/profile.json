@@ -1,0 +1,24 @@
+{
+  "id": "ashen_provisional_v1",
+  "schema_version": 1,
+  "classification": "user_authorized_ashen_oath_provisional_combat",
+  "incident_reconstruction": true,
+  "byte_identity_to_lost_file_verified": false,
+  "target_game": "The Severed Gods",
+  "target_version": "0.2.102",
+  "target_parity_verified": false,
+  "ep": {"initial_each_battle":2,"maximum":6,"boost_maximum":3,"recovery_unboosted_round":2,"recovery_spent_round":0,"carry_between_battles":false},
+  "boost": {"normal_hits":[1,2,3,4],"skill_hits":[1,2,3,4],"mp_cost_paid_once":true,"spend_on_valid_execution_only":true},
+  "turn": {"hero_speeds":[30,20,10],"enemy_speed":1,"sort":"descending_speed_then_stable_roster_index","actions_per_actor":1,"reorder":"round_start","counter":"hero_only_after_enemy_attack_batch_no_recursion"},
+  "mp": {"hero_maxima":[60,80,70],"focus_upgrade_bonus_each":5,"initial":"maximum","normal_cost":0,"skill_costs":[10,20],"natural_round_recovery":0,"defend_recovery":15,"parry_cost":5,"battle_start_recovery":0},
+  "defend": {"incoming_multiplier":0.5,"rounding":"ceil","duration":"until_next_round","ward_rite_immunity":false,"base_hp_recovery":0},
+  "parry": {"condition":"incoming_source_effective_height_matches_selected_height","successful_damage":0,"failure_damage_multiplier":1.0,"counter":"one_normal_attack_per_successful_living_hero_no_EP_MP_cost_no_boost"},
+  "height": {"matched_multiplier":1.0,"mismatch_multiplier":0.5,"mismatch_is_illegal":false,"random_miss":false},
+  "body": {"shield_loss":"1 + skill_break + weakness_bonus1 + glass_tooth_weakness_bonus1","shielded_body_damage_multiplier":0.6,"shielded_limb_hp_damage":0,"exposed_damage_multiplier":1.5,"rounding":"floor_min1","break":"cancel_next_enemy_phase_then_restore_shields_at_round_boundary_unless_limbHPzero","legs_break":"temporary_downed_lowers_other_parts_one_height","legs_sever":"permanent_collapse_lowers_other_parts_one_height","sever":"explicit_action_broken_limbHPzero_cost1EP","sever_rupture":"12+3*tier","sever_removes_source":true},
+  "historical_adoptions": [
+    {"rule":"defend_recovery15","source_id":"official_3755930_v0.2.78","source_version":"0.2.78","target_verified":false},
+    {"rule":"boost_allocation_max3","source_version":"0.2.13","target_verified":false},
+    {"rule":"parry_hero_only_and_normal_counter_relic_hook","source_id":"official_4129400_v0.1.137","source_version":"0.1.137","target_verified":false}
+  ],
+  "scope":"Combat vertical slice. Existing three heroes, nine-node map, fixed skills, five relics, rewards and meta progression remain transitional Ashen content. No legacy save conversion."
+}

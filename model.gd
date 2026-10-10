@@ -5,6 +5,7 @@ extends RefCounted
 
 const HERO_NAMES: Array[String] = ["Mara", "Ivo", "Sable"]
 const UPGRADE_COSTS: Dictionary = {"vitality": 12, "force": 16, "focus": 14}
+const ProvisionalCombat = preload("res://core/provisional_combat.gd")
 const LegacyContent = preload("res://legacy/legacy_content.gd")
 const RELICS: Array[Dictionary] = LegacyContent.RELICS
 
@@ -48,7 +49,8 @@ func _init() -> void:
 	load_meta()
 
 
-func new_run(seed_value: int = 0) -> bool:
+func new_run(seed_value: int = 0, combat_profile: String = "legacy") -> bool:
+	if combat_profile not in ["legacy", ProvisionalCombat.ID]: return _reject("Unknown combat profile.")
 	if (not _settled and not run.is_empty()) or (run.is_empty() and not _unrestored_journey.is_empty() and not bool(_unrestored_journey.settled)):
 		# Abandoning is not a defeat: do not turn repeatable opening shrines into
 		# free permanent growth. Only an actual defeat or victory banks earnings.
@@ -70,6 +72,9 @@ func new_run(seed_value: int = 0) -> bool:
 	event.clear()
 	round_number = 0
 	_make_heroes()
+	if combat_profile == ProvisionalCombat.ID:
+		run.ruleset = combat_profile
+		ProvisionalCombat.initialize_party(self)
 	_make_campaign()
 	_note("The oath is sworn. Nine crossings stand between you and the last sun.")
 	_open_map()
@@ -77,6 +82,21 @@ func new_run(seed_value: int = 0) -> bool:
 		save_meta()
 	return true
 
+
+func provisional_combat() -> bool:
+	return run.get("ruleset", "legacy") == ProvisionalCombat.ID
+
+func active_actor() -> int:
+	return ProvisionalCombat.active(self) if provisional_combat() and run.has("combat") else -2
+
+func allocate_boost(hero: int, value: int) -> bool:
+	return ProvisionalCombat.set_boost(self,hero,value) if provisional_combat() else false
+
+func parry(hero: int, part: int) -> bool:
+	return ProvisionalCombat.parry(self,hero,part) if provisional_combat() else false
+
+func sever(hero: int, part: int) -> bool:
+	return ProvisionalCombat.sever(self,hero,part) if provisional_combat() else false
 
 func _make_heroes() -> void:
 	heroes.assign(LegacyContent.make_heroes(meta.upgrades))
@@ -161,16 +181,18 @@ func start_battle(tier: int = 1) -> bool:
 	for hero: Dictionary in heroes:
 		hero.acted = false
 		hero.guard = false
-		hero.mp = mini(int(hero.max_mp), int(hero.mp) + 2)
+		if not provisional_combat(): hero.mp = mini(int(hero.max_mp), int(hero.mp) + 2)
 	_note("%s rises. Break a part's shields, then strike its exposed flesh to sever it." % boss.name)
 	if karma_shields > 0:
 		_note("A cruel oath is remembered: negative karma gives every enemy part +1 shield.")
-	_prepare_intent()
+	if provisional_combat(): ProvisionalCombat.begin(self)
+	else: _prepare_intent()
 	last_error = ""
 	return true
 
 
 func act(hero_index: int, skill_index: int, part_index: int = 0) -> bool:
+	if provisional_combat(): return ProvisionalCombat.act(self,hero_index,skill_index,part_index)
 	if phase != "battle":
 		return _reject("There is no battle in progress.")
 	if hero_index < 0 or hero_index >= heroes.size():
@@ -238,6 +260,7 @@ func act(hero_index: int, skill_index: int, part_index: int = 0) -> bool:
 
 
 func end_round() -> bool:
+	if provisional_combat(): return ProvisionalCombat.end_turn(self)
 	if phase != "battle":
 		return _reject("There is no round to end.")
 	# Resolve the same sequential forecast that the UI shows. Prepared targets
@@ -277,6 +300,7 @@ func get_intent_attacks() -> Array[Dictionary]:
 
 
 func preview_intent() -> Dictionary:
+	if provisional_combat() and phase == "battle": return ProvisionalCombat.preview_intent(self)
 	## Exact, read-only sequential HP/focus loss; no recovery or next-round gains.
 	var losses: Array[int] = [0, 0, 0]
 	var focus_losses: Array[int] = [0, 0, 0]
@@ -355,6 +379,7 @@ func preview_intent() -> Dictionary:
 
 
 func preview_action(hero_index: int, skill_index: int, part_index: int) -> Dictionary:
+	if provisional_combat() and phase == "battle": return ProvisionalCombat.preview(self,hero_index,skill_index,part_index)
 	## Forecast only. Never spend focus, consume RNG, or modify a target.
 	if phase != "battle" or hero_index < 0 or hero_index >= heroes.size():
 		return {"valid": false}
@@ -1172,6 +1197,7 @@ func _valid_journey(value: Variant) -> bool:
 			return false
 	if s.run.node != s.run.stage or not _whole(s.run.node, 0, 9) or (s.phase != "victory" and int(s.run.node) == 9):
 		return false
+	if s.run.get("ruleset", "legacy") not in ["legacy", ProvisionalCombat.ID]: return false
 	if not s.run.get("relics", null) is Array or not s.run.get("path", null) is Array or s.run.relics.size() > RELICS.size() or s.run.path.size() > 9:
 		return false
 	if s.run.has("damage_bonus") and not _whole(s.run.damage_bonus):
@@ -1225,4 +1251,48 @@ func _valid_journey(value: Variant) -> bool:
 				return false
 	if s.phase in ["camp", "event", "relic"] and s.event.is_empty():
 		return false
+	if s.run.get("ruleset", "legacy") == ProvisionalCombat.ID and not _valid_provisional_journey(s): return false
+	return true
+
+
+func _valid_provisional_journey(s: Dictionary) -> bool:
+	for h: Dictionary in s.heroes:
+		if not _whole(h.get("ep",null),0,ProvisionalCombat.EP_MAX) or not _whole(h.get("boost",null),0,mini(3,int(h.ep))) or not _whole(h.get("speed",null),0,999): return false
+		if not h.get("spent_ep",null) is bool or h.get("parry_height",null) not in ["","LOW","MID","HIGH"]: return false
+		for skill: Dictionary in h.skills:
+			if not skill.get("heights",null) is Array or skill.heights.is_empty() or skill.heights.size()>3 or not skill.get("normal",null) is bool: return false
+			for height: Variant in skill.heights:
+				if height not in ProvisionalCombat.HEIGHTS: return false
+	if s.parts.is_empty(): return s.phase != "battle" and not s.run.has("combat")
+	if not s.boss.get("downed",null) is bool or not s.boss.get("collapsed",null) is bool or not _whole(s.boss.get("speed",null),0,999): return false
+	for p: Dictionary in s.parts:
+		if p.get("base_level",null) not in ProvisionalCombat.HEIGHTS or not _whole(p.get("break_round",null)) or not p.get("break_consumed",null) is bool: return false
+		if bool(p.broken) != (int(p.shield)==0) or (p.severed and (not p.broken or int(p.hp)!=0)): return false
+	if not s.run.get("combat",null) is Dictionary: return false
+	var c: Dictionary = s.run.combat
+	if c.get("schema",0)!=1 or c.get("mode","") not in ["turn","counter","complete"] or not c.get("enemy_resolved",null) is bool: return false
+	if not c.get("queue",null) is Array or c.queue.is_empty() or c.queue.size()>4 or not c.get("counter_queue",null) is Array or c.counter_queue.size()>3: return false
+	if not c.get("events",null) is Array or c.events.size()>80 or not _whole(c.get("cursor",null),0,c.queue.size()-1): return false
+	var seen: Array = []
+	for actor: Variant in c.queue:
+		if not _whole(actor,-1,2) or actor in seen: return false
+		seen.append(actor)
+	if -1 not in seen: return false
+	# Every living actor was in the round-start queue. Dead entries may remain
+	# behind or ahead of the cursor, but can never become the active actor.
+	for i in range(s.heroes.size()):
+		if s.phase=="battle" and int(s.heroes[i].hp)>0 and i not in c.queue: return false
+	var current: int=int(c.queue[int(c.cursor)])
+	if s.phase=="battle" and c.mode=="turn" and current>=0 and int(s.heroes[current].hp)<=0: return false
+	for i in range(s.heroes.size()):
+		if int(s.heroes[i].boost)>0 and (s.phase!="battle" or c.mode!="turn" or i!=current): return false
+	seen.clear()
+	for actor: Variant in c.counter_queue:
+		if not _whole(actor,0,2) or actor in seen or int(s.heroes[int(actor)].hp)<=0: return false
+		seen.append(actor)
+	if c.mode == "counter" and (c.counter_queue.is_empty() or not c.enemy_resolved or int(c.queue[int(c.cursor)])!=-1): return false
+	if c.mode != "counter" and not c.counter_queue.is_empty(): return false
+	if s.phase == "battle" and c.mode == "complete": return false
+	for effect: Variant in c.events:
+		if not effect is Dictionary or not effect.get("kind",null) is String: return false
 	return true

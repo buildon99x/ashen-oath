@@ -433,7 +433,7 @@ func test_battle_focus_regression(scene) -> void:
 	scene.menu = true
 	scene.refresh()
 	await process_frame
-	check_focusable_control(scene, "BEGIN A NEW CYCLE")
+	check_focusable_control(scene, "RESUME CURRENT JOURNEY")
 	scene.menu = false
 	scene.help_open = true
 	scene.refresh()

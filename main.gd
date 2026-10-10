@@ -1,6 +1,7 @@
 extends Node2D
 
 const Localization = preload("res://localization.gd")
+const PortUI = preload("res://core/provisional_ui.gd")
 const Model = preload("res://model.gd")
 const ActorArt = preload("res://generated_actor_art.gd")
 const MonsterArt = preload("res://generated_monster.gd")
@@ -32,6 +33,9 @@ var victory_feet: Array[Vector2]=[Vector2(960,510),Vector2(1110,535),Vector2(126
 var ui: Control
 var selected_hero: int = 0
 var selected_part: int = 0
+var port_hover: int = -1
+var port_ui_generation: int = 0
+var port_preview_layer: Node2D
 var clock_time: float = 0.0
 var menu: bool = true
 var help_open: bool = false
@@ -100,6 +104,9 @@ func _ready() -> void:
 		if ResourceLoader.exists(path): vignettes[key]=load(path)
 	ui = Control.new()
 	add_child(ui)
+	port_preview_layer=Node2D.new()
+	port_preview_layer.draw.connect(draw_port_preview)
+	add_child(port_preview_layer)
 	apply_language_theme()
 	audio = AudioStreamPlayer.new()
 	add_child(audio)
@@ -113,6 +120,7 @@ func _process(delta: float) -> void:
 	fx_time=maxf(0.0,fx_time-delta)
 	enemy_flash=maxf(0.0,enemy_flash-delta)
 	combat_feedback.queue_redraw()
+	port_preview_layer.queue_redraw()
 	for i in range(actors.size()):
 		var actor: Node2D=actors[i]
 		actor.visible=not menu and (model.phase in ["battle","victory"] or finisher_active())
@@ -163,6 +171,10 @@ func draw_finisher_feedback() -> void:
 		combat_feedback.draw_rect(Rect2(point,Vector2(3,3)),Color(0.83,0.71,0.49,sin(release*PI)*0.85))
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN] and model.provisional_combat() and port_input_allowed():
+		change_boost(1 if event.button_index==MOUSE_BUTTON_WHEEL_UP else -1)
+		get_viewport().set_input_as_handled()
+		return
 	if not finisher_active(): return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_L:
 		get_viewport().set_input_as_handled()
@@ -247,6 +259,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			cycle_part(1)
 		elif key == KEY_SPACE:
 			request_end_round()
+		elif model.provisional_combat():
+			if key == KEY_T: provisional_special("parry")
+			elif key == KEY_F: provisional_special("sever")
+			elif key == KEY_BRACKETLEFT: change_boost(-1)
+			elif key == KEY_BRACKETRIGHT: change_boost(1)
 
 func box(rect: Rect2, color: Color, border: Color = Color.TRANSPARENT) -> void:
 	draw_style_box(style(color, border), rect)
@@ -328,6 +345,8 @@ func wrap_button(text: String, max_width: float, text_size: int = 18) -> String:
 	return "\n".join(lines)
 
 func refresh(save_journey: bool = true) -> void:
+	port_ui_generation += 1
+	port_hover = -1
 	if save_journey and model.persist_meta and not model.run.is_empty():
 		model.save_resume()
 	sync_save_notices()
@@ -373,9 +392,11 @@ func show_menu() -> void:
 	label_at("THE GODS LEFT THEIR CROWNS.", Vector2(70, 192), 18, TEAL)
 	label_at("We learned\nto break them.", Vector2(65, 233), 62, PALE)
 	paragraph("Three wanderers. Nine crossings. One hollow throne.\nRead the omen. Break a defense. Sever the source of its power.", Vector2(72, 405), 620, 21)
-	button("BEGIN A NEW CYCLE", Rect2(72, 525, 330, 62), request_new_cycle, true)
-	if not model.heroes.is_empty():
-		button("REVIEW LAST JOURNEY" if model.phase in ["victory", "defeat"] else "RESUME CURRENT JOURNEY", Rect2(72, 601, 330, 52), func(): menu = false; refresh())
+	if has_unfinished_journey():
+		button("RESUME CURRENT JOURNEY", Rect2(72,525,330,62),func(): menu=false; refresh(),true)
+	else:
+		button("BEGIN A NEW CYCLE", Rect2(72,525,330,62),request_new_cycle,true)
+		if not model.heroes.is_empty(): button("REVIEW LAST JOURNEY",Rect2(72,601,330,52),func(): menu=false;refresh())
 	label_at("LEGACY  /  %d ASH" % model.meta.get("essence",0), Vector2(72, 685), 19, GOLD)
 	var i: int = 0
 	for key in ["vitality", "force", "focus"]:
@@ -395,7 +416,7 @@ func begin_run() -> void:
 	if finisher_active(): return
 	confirmation = ""
 	build_open = false
-	model.new_run(int(Time.get_unix_time_from_system()) % 1000000)
+	model.new_run(int(Time.get_unix_time_from_system()) % 1000000,"ashen_provisional_v1")
 	coach_open = false
 	coach_eligible = int(model.meta.get("runs",0)) == 0
 	menu = false
@@ -415,6 +436,9 @@ func request_new_cycle() -> void:
 func request_end_round() -> void:
 	if finisher_active() or coach_open or recovery_notice_open or save_error_open: return
 	if model.phase != "battle": return
+	if model.provisional_combat():
+		finish_round()
+		return
 	if model.actions_remaining() > 0:
 		confirmation = "end_round"
 		refresh()
@@ -455,6 +479,9 @@ func upgrade(key: String) -> void:
 	refresh()
 
 func show_battle() -> void:
+	if model.provisional_combat():
+		PortUI.draw(self)
+		return
 	label_at("%02d  /  %s" % [int(model.run.get("node",0))+1, model.boss.get("name", "The Uncrowned")], Vector2(40, 104), 28, PALE)
 	label_at("ROUND %d  /  %d ACTIONS LEFT  /  %s" % [model.round_number, model.actions_remaining(), REGION_NAMES[current_biome()]], Vector2(40, 145), 15, TEAL)
 	label_at("TITAN  %d / %d" % [model.boss.get("hp",0), model.boss.get("max_hp",0)], Vector2(530, 103), 15, GOLD)
@@ -512,6 +539,8 @@ func show_battle() -> void:
 		if prediction.get("guard",false): card = "%s  %s\n%s" % [keys[i], skill.get("name",""),summary]
 		var b = button(card, Rect2(40+i*250, 689, 235, 88), perform.bind(i), false, not prediction.get("valid",false), false, 16)
 		b.add_theme_font_size_override("font_size",16)
+		b.mouse_entered.connect(set_port_hover.bind(i,port_ui_generation))
+		b.mouse_exited.connect(clear_port_hover.bind(i,port_ui_generation))
 		b.tooltip_text = display_text(skill.get("description","") + ("\nForecast: %d titan HP, including any sever rupture. Part damage is shown on the button." % prediction.get("titan_damage",0) if not prediction.get("guard",false) else "\nDefend halves normal attacks and cancels a wardable rite targeting this hero. The live omen updates after Defend."))
 		var icon_path: String="res://assets/ui/"+skill.get("type","slash")+".png"
 		if ResourceLoader.exists(icon_path):
@@ -583,6 +612,7 @@ func restore_battle_selection() -> void:
 		if model.heroes[i].hp>0:
 			selected_hero=i
 			if not model.heroes[i].acted: break
+	if model.provisional_combat() and model.active_actor() >= 0: selected_hero=model.active_actor()
 
 func cycle_part(direction: int) -> void:
 	if finisher_active(): return
@@ -595,6 +625,7 @@ func cycle_part(direction: int) -> void:
 	refresh()
 
 func perform(index: int) -> void:
+	if model.provisional_combat() and not port_input_allowed(): return
 	if finisher_active() or coach_open or recovery_notice_open or save_error_open: return
 	var before_hp: int=int(model.boss.get("hp",0))
 	var before_gold: int=int(model.run.get("gold",0))
@@ -632,14 +663,21 @@ func perform(index: int) -> void:
 			if not model.heroes[i].get("acted",false) and model.heroes[i].get("hp",0)>0:
 				selected_hero = i
 				break
+		if model.provisional_combat() and model.active_actor() >= 0: selected_hero=model.active_actor()
 	else:
 		message = model.last_error
 	refresh()
 
 func finish_round() -> void:
+	if model.provisional_combat() and not port_input_allowed(): return
 	if finisher_active(): return
 	if model.phase != "battle": return
 	confirmation = ""
+	if model.provisional_combat() and model.active_actor() >= 0:
+		model.end_round()
+		if model.active_actor() >= 0: selected_hero=model.active_actor()
+		refresh()
+		return
 	var forecast: Dictionary = model.preview_intent()
 	enemy_source = int(model.intent.get("part",0))
 	enemy_wards=[false,false,false]
@@ -660,6 +698,7 @@ func finish_round() -> void:
 		if model.heroes[i].get("hp",0)>0:
 			selected_hero = i
 			break
+	if model.provisional_combat() and model.active_actor() >= 0: selected_hero=model.active_actor()
 	refresh()
 
 func draw_enemy_feedback() -> void:
@@ -781,6 +820,9 @@ func show_ending() -> void:
 	button("RETURN TO THE EMBER",Rect2(70,550,350,68),func(): menu=true; refresh(),true)
 
 func show_help() -> void:
+	if model.provisional_combat():
+		PortUI.guide(self)
+		return
 	var blocker = ColorRect.new()
 	blocker.color = Color(0,0,0,0.6)
 	blocker.size = Vector2(1440,900)
@@ -1077,7 +1119,8 @@ func display_text(source: String) -> String:
 		# Terminology normalization is display-only; Localization's English API
 		# itself remains exact passthrough for canonical model/save compatibility.
 		translated = translated.replace("essence", "ash").replace("Essence", "Ash").replace("ESSENCE", "ASH")
-		translated = translated.replace(" MP", " Focus").replace("FOCUS", "Focus").replace(" focus", " Focus")
+		if not model.provisional_combat(): translated = translated.replace(" MP", " Focus").replace("FOCUS", "Focus").replace(" focus", " Focus")
+	if model.provisional_combat(): translated = translated.replace("집중", "MP").replace("Focus", "MP").replace("focus", "MP")
 	return translated
 
 func apply_language_theme() -> void:
@@ -1113,6 +1156,9 @@ func dismiss_first_battle_coach() -> void:
 	refresh()
 
 func show_first_battle_coach() -> void:
+	if model.provisional_combat():
+		PortUI.guide(self,true)
+		return
 	var blocker = ColorRect.new()
 	blocker.color = Color(0,0,0,0.82)
 	blocker.size = Vector2(1440,900)
@@ -1223,3 +1269,63 @@ func show_save_error() -> void:
 func show_language_button() -> void:
 	var language_button = button("L  한국어" if Localization.get_language() == "ko" else "L  English", LANGUAGE_RECT, toggle_language, false, false, true)
 	language_button.tooltip_text = display_text("L / Change language (한국어 / English)")
+
+
+func has_unfinished_journey() -> bool:
+	return not model.run.is_empty() and not model.heroes.is_empty() and model.phase not in ["title","victory","defeat"]
+
+func port_input_allowed() -> bool:
+	return model.phase=="battle" and not menu and not finisher_active() and not help_open and not build_open and confirmation.is_empty() and not coach_open and not recovery_notice_open and not save_error_open
+
+func change_boost(delta: int) -> void:
+	if not port_input_allowed() or not model.provisional_combat(): return
+	message = "" if model.allocate_boost(selected_hero,int(model.heroes[selected_hero].boost)+delta) else model.last_error
+	refresh()
+
+func provisional_special(kind: String) -> void:
+	if not port_input_allowed() or not model.provisional_combat(): return
+	var old_hp: int=model.boss.hp
+	var old_gold: int=model.run.gold
+	var old_ash: int=model.run.essence
+	var prior: Array=[]
+	for p in model.parts: prior.append(bool(p.severed))
+	var actor: int=selected_hero
+	var accepted: bool=model.parry(actor,selected_part) if kind=="parry" else model.sever(actor,selected_part)
+	if not accepted: message=model.last_error
+	else:
+		message=""
+		fx_actor=actor
+		fx_part=selected_part
+		fx_kind="guard" if kind=="parry" else "slash"
+		fx_damage=old_hp-int(model.boss.hp)
+		fx_time=0.85
+		if model.phase=="reward":
+			finisher_cuts=prior
+			finisher_remaining=FINISHER_DURATION
+			finisher_action=str(model.heroes[actor].name).to_upper()+" / SEVER"
+			finisher_awards="+%d GOLD / +%d UNBANKED ASH" % [int(model.run.gold)-old_gold,int(model.run.essence)-old_ash]
+		else: restore_battle_selection()
+	refresh()
+
+func set_port_hover(index: int, generation: int) -> void:
+	if generation==port_ui_generation and port_input_allowed(): port_hover=index
+
+func clear_port_hover(index: int, generation: int) -> void:
+	if generation==port_ui_generation and port_hover==index: port_hover=-1
+
+func draw_port_preview() -> void:
+	if not port_input_allowed() or port_hover<0: return
+	var p: Dictionary=model.preview_action(selected_hero,port_hover,selected_part)
+	if not p.get("valid",false) or p.get("guard",false): return
+	var hp: int=int(model.boss.hp)
+	var damage: int=mini(hp,int(p.get("titan_damage",0)))
+	var color: Color=Color.WHITE if sin(clock_time*9)>0 else Color("ef6a61")
+	var maximum: float=maxf(1,float(model.boss.max_hp))
+	port_preview_layer.draw_rect(Rect2(530+490*float(hp-damage)/maximum,135,490*float(damage)/maximum,6),color)
+	var after: String=PortUI.loc("NEXT HP %d (-%d)","공격 후 HP %d (-%d)") % [hp-damage,damage]
+	port_preview_layer.draw_string(font,Vector2(710,128),after,HORIZONTAL_ALIGNMENT_LEFT,310,14,color)
+	if model.provisional_combat():
+		var part: Dictionary=model.parts[selected_part]
+		var loss: int=mini(int(part.hp),int(p.get("damage",0)))
+		var part_max: float=maxf(1,float(part.max_hp))
+		port_preview_layer.draw_rect(Rect2(1100+280*float(int(part.hp)-loss)/part_max,278+selected_part*118,280*float(loss)/part_max,4),color)

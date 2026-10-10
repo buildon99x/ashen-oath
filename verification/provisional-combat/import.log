@@ -1,0 +1,508 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (30 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[   3% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[   6% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[   9% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  12% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  16% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  19% ] [90m[1mupdate_scripts_classes[22m | DirectionalHero[39m[0m
+[  22% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  25% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  29% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  32% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  35% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  38% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  41% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  45% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  48% ] [90m[1mupdate_scripts_classes[22m | GeneratedActorArt[39m[0m
+[  51% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  54% ] [90m[1mupdate_scripts_classes[22m | GeneratedMonster[39m[0m
+[  58% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  61% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  64% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  67% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  70% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  74% ] [90m[1mupdate_scripts_classes[22m | OathModel[39m[0m
+[  77% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  80% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  83% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  87% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  90% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  93% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1m_update_scan_actions[22m | Started Scanning actions... (147 steps)[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | cinder_forest.png[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | drowned_reliquary.png[39m[0m
+[   1% ] [90m[1m_update_scan_actions[22m | drowned_reliquary_arena.webp[39m[0m
+[   2% ] [90m[1m_update_scan_actions[22m | firelit_arena.webp[39m[0m
+[   2% ] [90m[1m_update_scan_actions[22m | pale_throne.png[39m[0m
+[   3% ] [90m[1m_update_scan_actions[22m | pale_throne_arena.webp[39m[0m
+[   4% ] [90m[1m_update_scan_actions[22m | review-contact.png[39m[0m
+[   4% ] [90m[1m_update_scan_actions[22m | AshenKorean-Regular.otf[39m[0m
+[   5% ] [90m[1m_update_scan_actions[22m | PixelifySans.ttf[39m[0m
+[   6% ] [90m[1m_update_scan_actions[22m | actors_master.webp[39m[0m
+[   6% ] [90m[1m_update_scan_actions[22m | ivo.png[39m[0m
+[   7% ] [90m[1m_update_scan_actions[22m | mara.png[39m[0m
+[   8% ] [90m[1m_update_scan_actions[22m | review-contact.png[39m[0m
+[   8% ] [90m[1m_update_scan_actions[22m | sable.png[39m[0m
+[   9% ] [90m[1m_update_scan_actions[22m | arcane.png[39m[0m
+[  10% ] [90m[1m_update_scan_actions[22m | blunt.png[39m[0m
+[  10% ] [90m[1m_update_scan_actions[22m | guard.png[39m[0m
+[  11% ] [90m[1m_update_scan_actions[22m | panel_disabled.png[39m[0m
+[  12% ] [90m[1m_update_scan_actions[22m | panel_gold.png[39m[0m
+[  12% ] [90m[1m_update_scan_actions[22m | panel_hover.png[39m[0m
+[  13% ] [90m[1m_update_scan_actions[22m | panel_normal.png[39m[0m
+[  14% ] [90m[1m_update_scan_actions[22m | pierce.png[39m[0m
+[  14% ] [90m[1m_update_scan_actions[22m | slash.png[39m[0m
+[  15% ] [90m[1m_update_scan_actions[22m | camp.png[39m[0m
+[  16% ] [90m[1m_update_scan_actions[22m | event.png[39m[0m
+[  16% ] [90m[1m_update_scan_actions[22m | relic.png[39m[0m
+[  17% ] [90m[1m_update_scan_actions[22m | review-contact.png[39m[0m
+[  18% ] [90m[1m_update_scan_actions[22m | reward.png[39m[0m
+[  18% ] [90m[1m_update_scan_actions[22m | cinder_forest.png[39m[0m
+[  19% ] [90m[1m_update_scan_actions[22m | hero_0.png[39m[0m
+[  20% ] [90m[1m_update_scan_actions[22m | hero_1.png[39m[0m
+[  20% ] [90m[1m_update_scan_actions[22m | hero_2.png[39m[0m
+[  21% ] [90m[1m_update_scan_actions[22m | titan_1_0.png[39m[0m
+[  22% ] [90m[1m_update_scan_actions[22m | titan_1_1.png[39m[0m
+[  22% ] [90m[1m_update_scan_actions[22m | titan_1_2.png[39m[0m
+[  23% ] [90m[1m_update_scan_actions[22m | titan_2_0.png[39m[0m
+[  24% ] [90m[1m_update_scan_actions[22m | titan_2_1.png[39m[0m
+[  25% ] [90m[1m_update_scan_actions[22m | titan_2_2.png[39m[0m
+[  25% ] [90m[1m_update_scan_actions[22m | titan_3_0.png[39m[0m
+[  26% ] [90m[1m_update_scan_actions[22m | titan_3_1.png[39m[0m
+[  27% ] [90m[1m_update_scan_actions[22m | titan_3_2.png[39m[0m
+[  27% ] [90m[1m_update_scan_actions[22m | 01-baseline-bellkeeper.jpg[39m[0m
+[  28% ] [90m[1m_update_scan_actions[22m | 02-baseline-early-end.jpg[39m[0m
+[  29% ] [90m[1m_update_scan_actions[22m | 03-baseline-severed-omen.jpg[39m[0m
+[  29% ] [90m[1m_update_scan_actions[22m | 04-live-forecast.jpg[39m[0m
+[  30% ] [90m[1m_update_scan_actions[22m | 05-unused-actions-dialog.jpg[39m[0m
+[  31% ] [90m[1m_update_scan_actions[22m | 06-staggered-forecast.jpg[39m[0m
+[  31% ] [90m[1m_update_scan_actions[22m | 07-cancelled-omen.jpg[39m[0m
+[  32% ] [90m[1m_update_scan_actions[22m | 08-new-cycle-warning.jpg[39m[0m
+[  33% ] [90m[1m_update_scan_actions[22m | 09-build-inspector.jpg[39m[0m
+[  33% ] [90m[1m_update_scan_actions[22m | 10-judge-third-round.jpg[39m[0m
+[  34% ] [90m[1m_update_scan_actions[22m | 11-final-region-enemy.jpg[39m[0m
+[  35% ] [90m[1m_update_scan_actions[22m | 12-full-collection-event.jpg[39m[0m
+[  35% ] [90m[1m_update_scan_actions[22m | 13-final-reward.jpg[39m[0m
+[  36% ] [90m[1m_update_scan_actions[22m | 14-full-victory.jpg[39m[0m
+[  37% ] [90m[1m_update_scan_actions[22m | 15-victory-corrected.jpg[39m[0m
+[  37% ] [90m[1m_update_scan_actions[22m | 01-guide.jpg[39m[0m
+[  38% ] [90m[1m_update_scan_actions[22m | 02-negative-karma-boss.jpg[39m[0m
+[  39% ] [90m[1m_update_scan_actions[22m | 03-judge-next-round-warning.jpg[39m[0m
+[  39% ] [90m[1m_update_scan_actions[22m | 04-judge-split-verdict.jpg[39m[0m
+[  40% ] [90m[1m_update_scan_actions[22m | 05-readable-dual-resume.jpg[39m[0m
+[  41% ] [90m[1m_update_scan_actions[22m | 06-marked-hero-ward.jpg[39m[0m
+[  41% ] [90m[1m_update_scan_actions[22m | 07-break-plus-ward-forecast.jpg[39m[0m
+[  42% ] [90m[1m_update_scan_actions[22m | 08-judge-guard-resolution.jpg[39m[0m
+[  43% ] [90m[1m_update_scan_actions[22m | 09-judge-victory.jpg[39m[0m
+[  43% ] [90m[1m_update_scan_actions[22m | 10-pale-gathering-warning.jpg[39m[0m
+[  44% ] [90m[1m_update_scan_actions[22m | 11-pale-zenith-release.jpg[39m[0m
+[  45% ] [90m[1m_update_scan_actions[22m | 12-pale-restored-target.jpg[39m[0m
+[  45% ] [90m[1m_update_scan_actions[22m | 13-pale-sever-and-ward.jpg[39m[0m
+[  46% ] [90m[1m_update_scan_actions[22m | 14-pale-fading-light.jpg[39m[0m
+[  47% ] [90m[1m_update_scan_actions[22m | 15-recovery-guard-plan.jpg[39m[0m
+[  47% ] [90m[1m_update_scan_actions[22m | 16-recovery-resolution.jpg[39m[0m
+[  48% ] [90m[1m_update_scan_actions[22m | 17-pale-victory-reward.jpg[39m[0m
+[  49% ] [90m[1m_update_scan_actions[22m | 18-full-counterplay-victory.jpg[39m[0m
+[  50% ] [90m[1m_update_scan_actions[22m | 01-before-final-strike.jpg[39m[0m
+[  50% ] [90m[1m_update_scan_actions[22m | 02-finisher-first-check.jpg[39m[0m
+[  51% ] [90m[1m_update_scan_actions[22m | 03-natural-reward.jpg[39m[0m
+[  52% ] [90m[1m_update_scan_actions[22m | 04-before-leg-finisher.jpg[39m[0m
+[  52% ] [90m[1m_update_scan_actions[22m | 05-bellkeeper-finisher.jpg[39m[0m
+[  53% ] [90m[1m_update_scan_actions[22m | 06-bellkeeper-dissolve.jpg[39m[0m
+[  54% ] [90m[1m_update_scan_actions[22m | 07-bellkeeper-reward.jpg[39m[0m
+[  54% ] [90m[1m_update_scan_actions[22m | 08-reward-resumed.jpg[39m[0m
+[  55% ] [90m[1m_update_scan_actions[22m | 09-safe-space-confirmation.jpg[39m[0m
+[  56% ] [90m[1m_update_scan_actions[22m | 10-before-skip.jpg[39m[0m
+[  56% ] [90m[1m_update_scan_actions[22m | 11-escape-skipped-reward.jpg[39m[0m
+[  57% ] [90m[1m_update_scan_actions[22m | 12-post-skip-choice.jpg[39m[0m
+[  58% ] [90m[1m_update_scan_actions[22m | 01-pale-arena.jpg[39m[0m
+[  58% ] [90m[1m_update_scan_actions[22m | 02-pale-selection-contrast.jpg[39m[0m
+[  59% ] [90m[1m_update_scan_actions[22m | 03-pale-finisher.jpg[39m[0m
+[  60% ] [90m[1m_update_scan_actions[22m | 04-pale-dual-omen.jpg[39m[0m
+[  60% ] [90m[1m_update_scan_actions[22m | 05-pale-damage-feedback.jpg[39m[0m
+[  61% ] [90m[1m_update_scan_actions[22m | 06-outlined-recovery-hit.jpg[39m[0m
+[  62% ] [90m[1m_update_scan_actions[22m | 07-final-boss-finisher.jpg[39m[0m
+[  62% ] [90m[1m_update_scan_actions[22m | 08-third-run-victory.jpg[39m[0m
+[  63% ] [90m[1m_update_scan_actions[22m | 09-returning-player-upgrade.jpg[39m[0m
+[  64% ] [90m[1m_update_scan_actions[22m | 10-drowned-arena.jpg[39m[0m
+[  64% ] [90m[1m_update_scan_actions[22m | 11-insufficient-focus.jpg[39m[0m
+[  65% ] [90m[1m_update_scan_actions[22m | 12-drowned-finisher.jpg[39m[0m
+[  66% ] [90m[1m_update_scan_actions[22m | 01-korean-return-menu.jpg[39m[0m
+[  66% ] [90m[1m_update_scan_actions[22m | 02-korean-migrated-map.jpg[39m[0m
+[  67% ] [90m[1m_update_scan_actions[22m | 03-english-toggle.jpg[39m[0m
+[  68% ] [90m[1m_update_scan_actions[22m | 04-korean-guide.jpg[39m[0m
+[  68% ] [90m[1m_update_scan_actions[22m | 05-korean-studio.jpg[39m[0m
+[  69% ] [90m[1m_update_scan_actions[22m | 06-korean-event.jpg[39m[0m
+[  70% ] [90m[1m_update_scan_actions[22m | 07-korean-judge-omen.jpg[39m[0m
+[  70% ] [90m[1m_update_scan_actions[22m | 08-korean-dual-omen.jpg[39m[0m
+[  71% ] [90m[1m_update_scan_actions[22m | 09-korean-ward-forecast.jpg[39m[0m
+[  72% ] [90m[1m_update_scan_actions[22m | 10-korean-judge-finish.jpg[39m[0m
+[  72% ] [90m[1m_update_scan_actions[22m | 11-korean-judge-reward.jpg[39m[0m
+[  73% ] [90m[1m_update_scan_actions[22m | 12-first-korean-launch.jpg[39m[0m
+[  74% ] [90m[1m_update_scan_actions[22m | 13-language-persisted-restart.jpg[39m[0m
+[  75% ] [90m[1m_update_scan_actions[22m | 14-first-battle-coach-after-resume.jpg[39m[0m
+[  75% ] [90m[1m_update_scan_actions[22m | 15-korean-early-end-confirm.jpg[39m[0m
+[  76% ] [90m[1m_update_scan_actions[22m | 16-low-focus-clear-recovery.jpg[39m[0m
+[  77% ] [90m[1m_update_scan_actions[22m | 17-korean-fallen-hero.jpg[39m[0m
+[  77% ] [90m[1m_update_scan_actions[22m | 18-korean-defeat-settlement.jpg[39m[0m
+[  78% ] [90m[1m_update_scan_actions[22m | 19-retry-new-cycle.jpg[39m[0m
+[  79% ] [90m[1m_update_scan_actions[22m | 20-native-backup-recovery-notice.jpg[39m[0m
+[  79% ] [90m[1m_update_scan_actions[22m | 21-native-write-failure.jpg[39m[0m
+[  80% ] [90m[1m_update_scan_actions[22m | 22-native-save-retry-success.jpg[39m[0m
+[  81% ] [90m[1m_update_scan_actions[22m | 23-recovery-clean-restart.jpg[39m[0m
+[  81% ] [90m[1m_update_scan_actions[22m | 24-korean-pale-gathering.jpg[39m[0m
+[  82% ] [90m[1m_update_scan_actions[22m | 25-korean-pale-release.jpg[39m[0m
+[  83% ] [90m[1m_update_scan_actions[22m | 26-korean-pale-defend-recovery.jpg[39m[0m
+[  83% ] [90m[1m_update_scan_actions[22m | 27-korean-final-strike.jpg[39m[0m
+[  84% ] [90m[1m_update_scan_actions[22m | 28-korean-final-reward-review.jpg[39m[0m
+[  85% ] [90m[1m_update_scan_actions[22m | 29-korean-fourth-run-victory.jpg[39m[0m
+[  85% ] [90m[1m_update_scan_actions[22m | 30-korean-legacy-purchase.jpg[39m[0m
+[  86% ] [90m[1m_update_scan_actions[22m | 31-korean-repeat-upgrade-applied.jpg[39m[0m
+[  87% ] [90m[1m_update_scan_actions[22m | native-battle-after.jpg[39m[0m
+[  87% ] [90m[1m_update_scan_actions[22m | native-battle-before.jpg[39m[0m
+[  88% ] [90m[1m_update_scan_actions[22m | native-cp4-action.jpg[39m[0m
+[  89% ] [90m[1m_update_scan_actions[22m | native-cp4-battle.jpg[39m[0m
+[  89% ] [90m[1m_update_scan_actions[22m | native-cp4-resume.jpg[39m[0m
+[  90% ] [90m[1m_update_scan_actions[22m | native-cp4-studio.jpg[39m[0m
+[  91% ] [90m[1m_update_scan_actions[22m | native-cp4-title.jpg[39m[0m
+[  91% ] [90m[1m_update_scan_actions[22m | native-cp5-event.jpg[39m[0m
+[  92% ] [90m[1m_update_scan_actions[22m | native-cp5-map.jpg[39m[0m
+[  93% ] [90m[1m_update_scan_actions[22m | native-cp5-relic.jpg[39m[0m
+[  93% ] [90m[1m_update_scan_actions[22m | native-cp6-firelit-battle.jpg[39m[0m
+[  94% ] [90m[1m_update_scan_actions[22m | native-cp7-generated-battle.jpg[39m[0m
+[  95% ] [90m[1m_update_scan_actions[22m | native-cp7-ivo-studio.jpg[39m[0m
+[  95% ] [90m[1m_update_scan_actions[22m | native-cp7-mara-studio.jpg[39m[0m
+[  96% ] [90m[1m_update_scan_actions[22m | native-cp7-sable-studio.jpg[39m[0m
+[  97% ] [90m[1m_update_scan_actions[22m | native-full-victory.jpg[39m[0m
+[  97% ] [90m[1m_update_scan_actions[22m | native-resume.jpg[39m[0m
+[  98% ] [90m[1m_update_scan_actions[22m | native-reward.jpg[39m[0m
+[92m[ DONE ][39m [1m_update_scan_actions[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (147 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   0% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   1% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   2% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   2% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   3% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   4% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   4% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   5% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   6% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   6% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   7% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   8% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   8% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   9% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  10% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  10% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  11% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  12% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  12% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  13% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  14% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  14% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  15% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  16% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  16% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  17% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  18% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  18% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  19% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  20% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  20% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  21% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  22% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  22% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  23% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  24% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  25% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  25% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  26% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  27% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  27% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  28% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  29% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  29% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  30% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  31% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  31% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  32% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  33% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  33% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  34% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  35% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  35% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  36% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  37% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  37% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  38% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  39% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  39% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  40% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  41% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  41% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  42% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  43% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  43% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  44% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  45% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  45% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  46% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  47% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  47% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  48% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  49% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  50% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  50% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  51% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  52% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  52% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  53% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  54% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  54% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  55% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  56% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  56% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  57% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  58% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  58% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  59% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  60% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  60% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  61% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  62% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  62% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  63% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  64% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  64% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  65% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  66% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  66% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  67% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  68% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  68% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  69% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  70% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  70% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  71% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  72% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  72% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  73% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  74% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  75% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  75% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  76% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  77% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  77% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  78% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  79% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  79% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  80% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  81% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  81% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  82% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  83% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  83% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  84% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  85% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  85% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  86% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  87% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  87% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  88% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  89% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  89% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  90% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  91% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  91% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  92% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  93% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  93% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  94% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  95% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  95% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  96% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  97% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  97% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  98% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing pre-reimport operations...[39m[0m
+[   0% ] [90m[1mreimport[22m | AshenKorean-Regular.otf[39m[0m
+[   0% ] [90m[1mreimport[22m | PixelifySans.ttf[39m[0m
+[   1% ] [90m[1mreimport[22m | AshenKorean-Regular.otf[39m[0m
+[   2% ] [90m[1mreimport[22m | PixelifySans.ttf[39m[0m
+[   2% ] [90m[1mreimport[22m | 08-third-run-victory.jpg[39m[0m
+[   3% ] [90m[1mreimport[22m | 09-returning-player-upgrade.jpg[39m[0m
+[   4% ] [90m[1mreimport[22m | 10-drowned-arena.jpg[39m[0m
+[   4% ] [90m[1mreimport[22m | 11-insufficient-focus.jpg[39m[0m
+[   5% ] [90m[1mreimport[22m | 12-drowned-finisher.jpg[39m[0m
+[   6% ] [90m[1mreimport[22m | 01-korean-return-menu.jpg[39m[0m
+[   6% ] [90m[1mreimport[22m | 02-korean-migrated-map.jpg[39m[0m
+[   7% ] [90m[1mreimport[22m | 03-english-toggle.jpg[39m[0m
+[   8% ] [90m[1mreimport[22m | 04-korean-guide.jpg[39m[0m
+[   8% ] [90m[1mreimport[22m | 05-korean-studio.jpg[39m[0m
+[   9% ] [90m[1mreimport[22m | 06-korean-event.jpg[39m[0m
+[  10% ] [90m[1mreimport[22m | 07-korean-judge-omen.jpg[39m[0m
+[  10% ] [90m[1mreimport[22m | 08-korean-dual-omen.jpg[39m[0m
+[  11% ] [90m[1mreimport[22m | 09-korean-ward-forecast.jpg[39m[0m
+[  12% ] [90m[1mreimport[22m | 10-korean-judge-finish.jpg[39m[0m
+[  12% ] [90m[1mreimport[22m | 11-korean-judge-reward.jpg[39m[0m
+[  13% ] [90m[1mreimport[22m | 12-first-korean-launch.jpg[39m[0m
+[  14% ] [90m[1mreimport[22m | 13-language-persisted-restart.jpg[39m[0m
+[  14% ] [90m[1mreimport[22m | 02-finisher-first-check.jpg[39m[0m
+[  15% ] [90m[1mreimport[22m | 03-natural-reward.jpg[39m[0m
+[  16% ] [90m[1mreimport[22m | 04-before-leg-finisher.jpg[39m[0m
+[  16% ] [90m[1mreimport[22m | 05-bellkeeper-finisher.jpg[39m[0m
+[  17% ] [90m[1mreimport[22m | 06-bellkeeper-dissolve.jpg[39m[0m
+[  18% ] [90m[1mreimport[22m | 07-bellkeeper-reward.jpg[39m[0m
+[  18% ] [90m[1mreimport[22m | 08-reward-resumed.jpg[39m[0m
+[  19% ] [90m[1mreimport[22m | 09-safe-space-confirmation.jpg[39m[0m
+[  20% ] [90m[1mreimport[22m | 10-before-skip.jpg[39m[0m
+[  20% ] [90m[1mreimport[22m | 11-escape-skipped-reward.jpg[39m[0m
+[  21% ] [90m[1mreimport[22m | 12-post-skip-choice.jpg[39m[0m
+[  22% ] [90m[1mreimport[22m | 01-pale-arena.jpg[39m[0m
+[  22% ] [90m[1mreimport[22m | 02-pale-selection-contrast.jpg[39m[0m
+[  23% ] [90m[1mreimport[22m | 03-pale-finisher.jpg[39m[0m
+[  24% ] [90m[1mreimport[22m | 04-pale-dual-omen.jpg[39m[0m
+[  25% ] [90m[1mreimport[22m | 05-pale-damage-feedback.jpg[39m[0m
+[  25% ] [90m[1mreimport[22m | 06-outlined-recovery-hit.jpg[39m[0m
+[  26% ] [90m[1mreimport[22m | 07-final-boss-finisher.jpg[39m[0m
+[  27% ] [90m[1mreimport[22m | native-battle-after.jpg[39m[0m
+[  27% ] [90m[1mreimport[22m | native-battle-before.jpg[39m[0m
+[  28% ] [90m[1mreimport[22m | native-cp4-action.jpg[39m[0m
+[  29% ] [90m[1mreimport[22m | native-cp4-battle.jpg[39m[0m
+[  29% ] [90m[1mreimport[22m | native-cp4-resume.jpg[39m[0m
+[  30% ] [90m[1mreimport[22m | native-cp4-studio.jpg[39m[0m
+[  31% ] [90m[1mreimport[22m | native-cp4-title.jpg[39m[0m
+[  31% ] [90m[1mreimport[22m | native-cp5-event.jpg[39m[0m
+[  32% ] [90m[1mreimport[22m | native-cp5-map.jpg[39m[0m
+[  33% ] [90m[1mreimport[22m | native-cp5-relic.jpg[39m[0m
+[  33% ] [90m[1mreimport[22m | native-cp6-firelit-battle.jpg[39m[0m
+[  34% ] [90m[1mreimport[22m | native-cp7-generated-battle.jpg[39m[0m
+[  35% ] [90m[1mreimport[22m | native-cp7-ivo-studio.jpg[39m[0m
+[  35% ] [90m[1mreimport[22m | native-cp7-mara-studio.jpg[39m[0m
+[  36% ] [90m[1mreimport[22m | native-cp7-sable-studio.jpg[39m[0m
+[  37% ] [90m[1mreimport[22m | native-full-victory.jpg[39m[0m
+[  37% ] [90m[1mreimport[22m | native-resume.jpg[39m[0m
+[  38% ] [90m[1mreimport[22m | native-reward.jpg[39m[0m
+[  39% ] [90m[1mreimport[22m | 14-first-battle-coach-after-resume.jpg[39m[0m
+[  39% ] [90m[1mreimport[22m | 15-korean-early-end-confirm.jpg[39m[0m
+[  40% ] [90m[1mreimport[22m | 16-low-focus-clear-recovery.jpg[39m[0m
+[  41% ] [90m[1mreimport[22m | 17-korean-fallen-hero.jpg[39m[0m
+[  41% ] [90m[1mreimport[22m | 18-korean-defeat-settlement.jpg[39m[0m
+[  42% ] [90m[1mreimport[22m | 19-retry-new-cycle.jpg[39m[0m
+[  43% ] [90m[1mreimport[22m | 20-native-backup-recovery-notice.jpg[39m[0m
+[  43% ] [90m[1mreimport[22m | 21-native-write-failure.jpg[39m[0m
+[  44% ] [90m[1mreimport[22m | 22-native-save-retry-success.jpg[39m[0m
+[  45% ] [90m[1mreimport[22m | 23-recovery-clean-restart.jpg[39m[0m
+[  45% ] [90m[1mreimport[22m | 24-korean-pale-gathering.jpg[39m[0m
+[  46% ] [90m[1mreimport[22m | 25-korean-pale-release.jpg[39m[0m
+[  47% ] [90m[1mreimport[22m | 26-korean-pale-defend-recovery.jpg[39m[0m
+[  47% ] [90m[1mreimport[22m | 27-korean-final-strike.jpg[39m[0m
+[  48% ] [90m[1mreimport[22m | 28-korean-final-reward-review.jpg[39m[0m
+[  49% ] [90m[1mreimport[22m | 29-korean-fourth-run-victory.jpg[39m[0m
+[  50% ] [90m[1mreimport[22m | 30-korean-legacy-purchase.jpg[39m[0m
+[  50% ] [90m[1mreimport[22m | 31-korean-repeat-upgrade-applied.jpg[39m[0m
+[  51% ] [90m[1mreimport[22m | panel_normal.png[39m[0m
+[  52% ] [90m[1mreimport[22m | pierce.png[39m[0m
+[  52% ] [90m[1mreimport[22m | slash.png[39m[0m
+[  53% ] [90m[1mreimport[22m | camp.png[39m[0m
+[  54% ] [90m[1mreimport[22m | event.png[39m[0m
+[  54% ] [90m[1mreimport[22m | relic.png[39m[0m
+[  55% ] [90m[1mreimport[22m | review-contact.png[39m[0m
+[  56% ] [90m[1mreimport[22m | reward.png[39m[0m
+[  56% ] [90m[1mreimport[22m | cinder_forest.png[39m[0m
+[  57% ] [90m[1mreimport[22m | hero_0.png[39m[0m
+[  58% ] [90m[1mreimport[22m | hero_1.png[39m[0m
+[  58% ] [90m[1mreimport[22m | hero_2.png[39m[0m
+[  59% ] [90m[1mreimport[22m | titan_1_0.png[39m[0m
+[  60% ] [90m[1mreimport[22m | titan_1_1.png[39m[0m
+[  60% ] [90m[1mreimport[22m | titan_1_2.png[39m[0m
+[  61% ] [90m[1mreimport[22m | titan_2_0.png[39m[0m
+[  62% ] [90m[1mreimport[22m | titan_2_1.png[39m[0m
+[  62% ] [90m[1mreimport[22m | titan_2_2.png[39m[0m
+[  63% ] [90m[1mreimport[22m | cinder_forest.png[39m[0m
+[  64% ] [90m[1mreimport[22m | drowned_reliquary.png[39m[0m
+[  64% ] [90m[1mreimport[22m | drowned_reliquary_arena.webp[39m[0m
+[  65% ] [90m[1mreimport[22m | firelit_arena.webp[39m[0m
+[  66% ] [90m[1mreimport[22m | pale_throne.png[39m[0m
+[  66% ] [90m[1mreimport[22m | pale_throne_arena.webp[39m[0m
+[  67% ] [90m[1mreimport[22m | review-contact.png[39m[0m
+[  68% ] [90m[1mreimport[22m | actors_master.webp[39m[0m
+[  68% ] [90m[1mreimport[22m | ivo.png[39m[0m
+[  69% ] [90m[1mreimport[22m | mara.png[39m[0m
+[  70% ] [90m[1mreimport[22m | review-contact.png[39m[0m
+[  70% ] [90m[1mreimport[22m | sable.png[39m[0m
+[  71% ] [90m[1mreimport[22m | arcane.png[39m[0m
+[  72% ] [90m[1mreimport[22m | blunt.png[39m[0m
+[  72% ] [90m[1mreimport[22m | guard.png[39m[0m
+[  73% ] [90m[1mreimport[22m | panel_disabled.png[39m[0m
+[  74% ] [90m[1mreimport[22m | panel_gold.png[39m[0m
+[  75% ] [90m[1mreimport[22m | panel_hover.png[39m[0m
+[  75% ] [90m[1mreimport[22m | 02-negative-karma-boss.jpg[39m[0m
+[  76% ] [90m[1mreimport[22m | 03-judge-next-round-warning.jpg[39m[0m
+[  77% ] [90m[1mreimport[22m | 04-judge-split-verdict.jpg[39m[0m
+[  77% ] [90m[1mreimport[22m | 05-readable-dual-resume.jpg[39m[0m
+[  78% ] [90m[1mreimport[22m | 06-marked-hero-ward.jpg[39m[0m
+[  79% ] [90m[1mreimport[22m | 07-break-plus-ward-forecast.jpg[39m[0m
+[  79% ] [90m[1mreimport[22m | 08-judge-guard-resolution.jpg[39m[0m
+[  80% ] [90m[1mreimport[22m | 09-judge-victory.jpg[39m[0m
+[  81% ] [90m[1mreimport[22m | 10-pale-gathering-warning.jpg[39m[0m
+[  81% ] [90m[1mreimport[22m | 11-pale-zenith-release.jpg[39m[0m
+[  82% ] [90m[1mreimport[22m | 12-pale-restored-target.jpg[39m[0m
+[  83% ] [90m[1mreimport[22m | 13-pale-sever-and-ward.jpg[39m[0m
+[  83% ] [90m[1mreimport[22m | 14-pale-fading-light.jpg[39m[0m
+[  84% ] [90m[1mreimport[22m | 15-recovery-guard-plan.jpg[39m[0m
+[  85% ] [90m[1mreimport[22m | 16-recovery-resolution.jpg[39m[0m
+[  85% ] [90m[1mreimport[22m | 17-pale-victory-reward.jpg[39m[0m
+[  86% ] [90m[1mreimport[22m | 18-full-counterplay-victory.jpg[39m[0m
+[  87% ] [90m[1mreimport[22m | 01-before-final-strike.jpg[39m[0m
+[  87% ] [90m[1mreimport[22m | titan_3_0.png[39m[0m
+[  88% ] [90m[1mreimport[22m | titan_3_1.png[39m[0m
+[  89% ] [90m[1mreimport[22m | titan_3_2.png[39m[0m
+[  89% ] [90m[1mreimport[22m | 01-baseline-bellkeeper.jpg[39m[0m
+[  90% ] [90m[1mreimport[22m | 02-baseline-early-end.jpg[39m[0m
+[  91% ] [90m[1mreimport[22m | 03-baseline-severed-omen.jpg[39m[0m
+[  91% ] [90m[1mreimport[22m | 04-live-forecast.jpg[39m[0m
+[  92% ] [90m[1mreimport[22m | 05-unused-actions-dialog.jpg[39m[0m
+[  93% ] [90m[1mreimport[22m | 06-staggered-forecast.jpg[39m[0m
+[  93% ] [90m[1mreimport[22m | 07-cancelled-omen.jpg[39m[0m
+[  94% ] [90m[1mreimport[22m | 08-new-cycle-warning.jpg[39m[0m
+[  95% ] [90m[1mreimport[22m | 09-build-inspector.jpg[39m[0m
+[  95% ] [90m[1mreimport[22m | 10-judge-third-round.jpg[39m[0m
+[  96% ] [90m[1mreimport[22m | 11-final-region-enemy.jpg[39m[0m
+[  97% ] [90m[1mreimport[22m | 12-full-collection-event.jpg[39m[0m
+[  97% ] [90m[1mreimport[22m | 13-final-reward.jpg[39m[0m
+[  98% ] [90m[1mreimport[22m | 14-full-victory.jpg[39m[0m
+[  99% ] [90m[1mreimport[22m | Finalizing Asset Import...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (147 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing post-reimport operations...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://model.gd".
+          at: GDScript::reload (res://main.gd:5)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://model.gd".
+          at: GDScript::reload (res://main.gd:5)
+ERROR: Failed to load script "res://main.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
