@@ -29,6 +29,7 @@ static func initialize_party(m) -> void:
 			skill.heights = [["LOW","MID"],["HIGH"],["MID","HIGH"]][i].duplicate() if k == 0 else (["LOW"] if k == 1 else HEIGHTS.duplicate())
 			skill.normal = k == 0
 			skill.description = "Ashen provisional: Boost adds one hit per EP; matching height deals full damage. MP is paid once."
+			if skill.name == "Blood Lantern": skill.description += "\nBlood Lantern restores 7 HP to every living ally."
 			if k == 3: skill.description = "Ashen provisional Defend: halve all incoming damage until next round; recover 15 MP."
 
 static func begin(m) -> void:
@@ -116,13 +117,18 @@ static func _simulate_attack(m, h: Dictionary, skill: Dictionary, target: int, b
 	var old_hp: int = int(p.hp)
 	var old_shield: int = int(p.shield)
 	var was_broken: bool = p.broken
-	var hits: int = 1 + boost
+	var allocated_hits: int = 1 + boost
+	var hits: int = 0
 	var height_match: bool = str(p.level) in skill.heights
 	var weakness: bool = str(skill.type) == str(p.weakness)
+	var party_heal: Array = []
+	for ally: Dictionary in m.heroes:
+		party_heal.append(mini(7,int(ally.max_hp)-int(ally.hp)) if skill.name=="Blood Lantern" and int(ally.hp)>0 else 0)
 	var events: Array = []
 	if bool(skill.normal): events.append({"kind":"normal_attack","hero":h.name})
-	for hit in range(hits):
+	for hit in range(allocated_hits):
 		if hp <= 0: break
+		hits += 1
 		var exposed: bool = p.broken
 		var power: int = int(skill.power) + int(m.meta.upgrades.force)*2 + int(m.run.get("damage_bonus",0))
 		if m.has_relic("red_thread"): power += 2
@@ -139,7 +145,7 @@ static func _simulate_attack(m, h: Dictionary, skill: Dictionary, target: int, b
 				events.append({"kind":"break","part":target})
 		hp = maxi(0,hp-damage)
 		events.append({"kind":"hit","part":target,"hit":hit+1,"damage":damage,"height_match":height_match,"weakness":weakness})
-	return {"part_after":p,"boss_after":hp,"damage":old_hp-int(p.hp),"titan_damage":int(m.boss.hp)-hp,"shield_loss":old_shield-int(p.shield),"breaks":not was_broken and p.broken,"height_match":height_match,"weakness":weakness,"hits":hits,"execute_ready":bool(p.broken) and int(p.hp)==0,"events":events}
+	return {"part_after":p,"boss_after":hp,"damage":old_hp-int(p.hp),"titan_damage":int(m.boss.hp)-hp,"shield_loss":old_shield-int(p.shield),"breaks":not was_broken and p.broken,"height_match":height_match,"weakness":weakness,"hits":hits,"allocated_hits":allocated_hits,"execute_ready":bool(p.broken) and int(p.hp)==0,"events":events,"party_heal":party_heal}
 
 static func act(m, hero: int, skill_index: int, target: int) -> bool:
 	if m.phase != "battle": return m._reject("There is no battle in progress.")
@@ -276,6 +282,7 @@ static func preview_intent(m) -> Dictionary:
 		var status: String = "cancelled" if cancelled else "incoming"
 		var losses: Array = [0,0,0]
 		var lines: Array[String] = []
+		var parried: Array = []
 		if cancelled: lines.append("Source severed, broken, or already resolved: no attack.")
 		for target_value: Variant in attack.targets:
 			var target: int = int(target_value)
@@ -283,6 +290,7 @@ static func preview_intent(m) -> Dictionary:
 			if cancelled or int(remaining[target]) <= 0: continue
 			if str(h.parry_height) == effective_height(m,int(attack.part)):
 				lines.append("%s PARRY: 0 HP / Counter" % h.name)
+				parried.append(target)
 				if target not in result.counters: result.counters.append(target)
 				status = "warded"
 				continue
@@ -292,7 +300,7 @@ static func preview_intent(m) -> Dictionary:
 			result.losses[target] += int(losses[target])
 			lines.append("%s -%d HP%s" % [h.name,losses[target]," / guarded" if h.guard else ""])
 		if not cancelled: result.status = status
-		result.attacks.append({"name":attack.name,"part":attack.part,"source":p.name,"source_status":"cancelled" if cancelled else "incoming","status":status,"targets":attack.targets.duplicate(),"wardable":false,"damage":attack.damage,"losses":losses,"focus_losses":[0,0,0],"description":"; ".join(lines),"counterplay":"Break cancels this phase; Sever removes the source. Defend halves; matching-height Parry counters."})
+		result.attacks.append({"name":attack.name,"part":attack.part,"source":p.name,"source_status":"cancelled" if cancelled else "incoming","status":status,"targets":attack.targets.duplicate(),"wardable":false,"damage":attack.damage,"losses":losses,"focus_losses":[0,0,0],"parried":parried,"description":"; ".join(lines),"counterplay":"Break cancels this phase; Sever removes the source. Defend halves; matching-height Parry counters."})
 	var living_counters: Array = []
 	for hero: int in result.counters:
 		if int(remaining[hero]) > 0: living_counters.append(hero)

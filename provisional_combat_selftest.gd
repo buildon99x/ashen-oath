@@ -407,6 +407,7 @@ func _test_victory_cancellation() -> void:
 	ordinary.boss.hp = 1
 	var before_hp: int = ordinary.heroes[0].hp
 	accepted(ordinary, ordinary.allocate_boost(0,2), "allocate before lethal first hit")
+	check(ordinary.preview_action(0,0,1).hits==1 and ordinary.preview_action(0,0,1).allocated_hits==3,"lethal preview reports one executed hit rather than three allocated hits")
 	accepted(ordinary, ordinary.act(0,0,1), "normal action kills before enemy phase")
 	check(event_count(ordinary,"hit") == 1 and ordinary.phase == "reward" and ordinary.heroes[0].hp == before_hp, "lethal first hit cancels later hits and scheduled enemy damage")
 
@@ -449,6 +450,10 @@ func _test_validation() -> void:
 		var changed: Dictionary = original.duplicate(true)
 		changed.run.combat.erase(field)
 		invalid_case(m,changed,"missing combat " + field)
+	for invalid_target: Variant in [-1,3,1.5,"2",null]:
+		var changed: Dictionary=original.duplicate(true)
+		changed.run.combat.ui_target=invalid_target
+		invalid_case(m,changed,"invalid UI target "+str(invalid_target))
 	var bad: Dictionary = original.duplicate(true)
 	bad.run.ruleset = "claimed_target_profile"
 	invalid_case(m,bad,"unknown profile")

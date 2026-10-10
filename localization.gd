@@ -14,6 +14,7 @@ static var _cache: Dictionary = {}
 static var _missing: Dictionary = {}
 
 const CATALOG: Dictionary = {
+	"+5 max MP": "최대 MP +5",
 	"Unknown combat profile.": "알 수 없는 전투 규칙입니다.",
 	"Only the current hero can allocate Boost.": "현재 차례인 영웅만 부스트를 배분할 수 있습니다.",
 	"Boost needs stored EP (maximum 3).": "부스트에는 보유 EP가 필요합니다(최대 3).",

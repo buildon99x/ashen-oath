@@ -121,6 +121,21 @@ func run_tests() -> void:
 	scene.perform(0)
 	check(scene.model.run.combat.mode=="turn" and scene.model.round_number==2,"normal counter completes and returns to turns")
 	reset_battle()
+	scene.provisional_special("parry")
+	scene.request_end_round()
+	scene.request_end_round()
+	scene.model.intent.targets=[0,1]
+	scene.request_end_round()
+	check(scene.enemy_wards==[true,false,false],"multi-target feedback marks only actual parrying hero")
+	check(scene.model.heroes[1].hp==41,"non-parrying second target takes actual damage")
+	reset_battle()
+	scene.request_end_round()
+	for h: Dictionary in scene.model.heroes: h.hp=int(h.max_hp)-4
+	var healing: Dictionary=scene.model.preview_action(1,2,0)
+	check(healing.party_heal==[4,4,4],"Blood Lantern forecasts capped living-party recovery once")
+	scene.perform(2)
+	for h: Dictionary in scene.model.heroes: check(h.hp==h.max_hp,"Blood Lantern actual heal matches forecast")
+	reset_battle()
 	scene.model.parts[0].shield=0
 	scene.model.parts[0].broken=true
 	scene.model.parts[0].hp=0
@@ -140,6 +155,10 @@ func run_tests() -> void:
 				check(child.position.x>=0 and child.position.y>=0 and child.position.x+child.size.x<=1441 and child.position.y+child.size.y<=901,"battle control bounds / "+language)
 			if child is Button and child.has_meta("skill_index"):
 				check(child.text.count("\n")<=5,"skill card line budget / "+language)
+		for child in scene.ui.get_children():
+			if child is Label and child.position==Vector2(40,435):
+				check(child.position.y+child.size.y<=525,"omen legend clears EP controls / "+language)
+		check("FOCUS" not in scene.display_text("FOCUS 60/60") and "MP" in scene.display_text("FOCUS 60/60"),"nonbattle resource label stays MP / "+language)
 		check(button_containing("EP")!=null,"EP remains distinct resource / "+language)
 		scene.help_open=true
 		scene.refresh(false)
@@ -154,9 +173,11 @@ func run_tests() -> void:
 	scene.refresh(false)
 	await process_frame
 	check(button_containing("RESUME CURRENT JOURNEY")!=null and button_containing("BEGIN A NEW CYCLE")==null,"unfinished journey main menu offers Continue only")
+	check(button_containing("+5 max MP")!=null,"next-cycle MP upgrade shows actual five-point gain")
 	var path="user://provisional-ui-resume.save"
 	scene.menu=false
 	scene.model.allocate_boost(0,2)
+	scene.select_part(2)
 	check(scene.model.save_resume(path),"save allocated Boost")
 	var restored=Model.new()
 	restored.persist_meta=false
@@ -166,6 +187,7 @@ func run_tests() -> void:
 	scene.refresh(false)
 	await process_frame
 	check(scene.model.provisional_combat() and scene.selected_hero==0 and scene.model.heroes[0].boost==2,"resumed journey selects saved profile and actor")
+	check(scene.selected_part==2,"resumed target remains the same as allocated Boost plan")
 	check(button_containing("+ EP")!=null,"resumed profile renders provisional controls")
 	var legacy=Model.new()
 	legacy.persist_meta=false

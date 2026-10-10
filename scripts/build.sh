@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Reproducible native release export. Official Godot 4.6.3 templates are required.
+# Reproducible native release export. Official Godot 4.7.2 templates are required.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$ROOT/builds}"
 GODOT="${GODOT:-godot}"
-VERSION="4.6.3.stable"
+VERSION="4.7.2.stable"
 TEMPLATE_SOURCE="${GODOT_TEMPLATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/godot/export_templates/$VERSION}"
 RUNTIME="${BUILD_RUNTIME_DIR:-$ROOT/.runtime}"
 mkdir -p "$OUT" "$RUNTIME"
 OUT="$(cd "$OUT" && pwd)"
 RUNTIME="$(cd "$RUNTIME" && pwd)"
-mkdir -p "$RUNTIME/data/godot/export_templates/$VERSION" "$RUNTIME/config" "$RUNTIME/cache" "$OUT/windows" "$OUT/linux" "$OUT/logs"
+mkdir -p "$RUNTIME/data/godot/export_templates/$VERSION" "$RUNTIME/config" "$RUNTIME/cache" "$RUNTIME/home" "$OUT/windows" "$OUT/linux" "$OUT/logs"
+export HOME="$RUNTIME/home"
+export GODOT
 export XDG_DATA_HOME="$RUNTIME/data" XDG_CONFIG_HOME="$RUNTIME/config" XDG_CACHE_HOME="$RUNTIME/cache"
 TARGET="$XDG_DATA_HOME/godot/export_templates/$VERSION"
 for template in linux_release.x86_64 windows_release_x86_64.exe; do
@@ -32,7 +34,11 @@ fi
 "$GODOT" --headless --path "$ROOT" --export-release 'Windows x64' "$OUT/windows/ashen-oath.exe" >"$OUT/logs/export-windows.log" 2>&1
 "$GODOT" --headless --path "$ROOT" --export-release 'Linux x64' "$OUT/linux/ashen-oath.x86_64" >"$OUT/logs/export-linux.log" 2>&1
 chmod +x "$OUT/linux/ashen-oath.x86_64"
+SMOKE_PROFILE="$(mktemp -d "$RUNTIME/release-smoke.XXXXXX")"
+mkdir -p "$SMOKE_PROFILE/home"
+export HOME="$SMOKE_PROFILE/home" XDG_DATA_HOME="$SMOKE_PROFILE/data" XDG_CONFIG_HOME="$SMOKE_PROFILE/config" XDG_CACHE_HOME="$SMOKE_PROFILE/cache"
 "$OUT/linux/ashen-oath.x86_64" --headless --quit-after 5 >"$OUT/logs/linux-smoke.log" 2>&1
+"$OUT/linux/ashen-oath.x86_64" --headless --script "$ROOT/scripts/package_smoke.gd" >"$OUT/logs/packaged-combat.log" 2>&1
 if grep -Ein 'SCRIPT ERROR|Parse Error|ERROR:' "$OUT/logs/"*.log; then
   printf 'An import, test, export, or smoke log contains errors.\n' >&2
   exit 1

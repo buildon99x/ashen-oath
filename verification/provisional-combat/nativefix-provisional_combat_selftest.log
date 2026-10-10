@@ -1,0 +1,43 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+CAMPAIGN seed=81 outcome=victory node=9 steps=128 battles=6 final_battle_sever_events=2
+CAMPAIGN seed=81 outcome=victory node=9 steps=128 battles=6 final_battle_sever_events=2
+CAMPAIGN seed=82 outcome=victory node=9 steps=112 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=82 outcome=victory node=9 steps=112 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=83 outcome=victory node=9 steps=108 battles=5 final_battle_sever_events=2
+CAMPAIGN seed=83 outcome=victory node=9 steps=108 battles=5 final_battle_sever_events=2
+CAMPAIGN seed=84 outcome=victory node=9 steps=160 battles=7 final_battle_sever_events=3
+CAMPAIGN seed=84 outcome=victory node=9 steps=160 battles=7 final_battle_sever_events=3
+CAMPAIGN seed=85 outcome=victory node=9 steps=125 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=85 outcome=victory node=9 steps=125 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=86 outcome=victory node=9 steps=87 battles=4 final_battle_sever_events=3
+CAMPAIGN seed=86 outcome=victory node=9 steps=87 battles=4 final_battle_sever_events=3
+CAMPAIGN seed=87 outcome=victory node=9 steps=122 battles=6 final_battle_sever_events=2
+CAMPAIGN seed=87 outcome=victory node=9 steps=122 battles=6 final_battle_sever_events=2
+CAMPAIGN seed=88 outcome=victory node=9 steps=100 battles=5 final_battle_sever_events=2
+CAMPAIGN seed=88 outcome=victory node=9 steps=100 battles=5 final_battle_sever_events=2
+CAMPAIGN seed=89 outcome=victory node=9 steps=115 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=89 outcome=victory node=9 steps=115 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=90 outcome=victory node=9 steps=80 battles=4 final_battle_sever_events=2
+CAMPAIGN seed=90 outcome=victory node=9 steps=80 battles=4 final_battle_sever_events=2
+CAMPAIGN seed=91 outcome=victory node=9 steps=150 battles=7 final_battle_sever_events=3
+CAMPAIGN seed=91 outcome=victory node=9 steps=150 battles=7 final_battle_sever_events=3
+CAMPAIGN seed=92 outcome=victory node=9 steps=161 battles=7 final_battle_sever_events=3
+CAMPAIGN seed=92 outcome=victory node=9 steps=161 battles=7 final_battle_sever_events=3
+CAMPAIGN seed=93 outcome=victory node=9 steps=116 battles=5 final_battle_sever_events=2
+CAMPAIGN seed=93 outcome=victory node=9 steps=116 battles=5 final_battle_sever_events=2
+CAMPAIGN seed=94 outcome=victory node=9 steps=151 battles=7 final_battle_sever_events=2
+CAMPAIGN seed=94 outcome=victory node=9 steps=151 battles=7 final_battle_sever_events=2
+CAMPAIGN seed=95 outcome=victory node=9 steps=114 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=95 outcome=victory node=9 steps=114 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=96 outcome=victory node=9 steps=129 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=96 outcome=victory node=9 steps=129 battles=5 final_battle_sever_events=3
+CAMPAIGN seed=97 outcome=defeat node=6 steps=94 battles=4 final_battle_sever_events=1
+CAMPAIGN seed=97 outcome=defeat node=6 steps=94 battles=4 final_battle_sever_events=1
+CAMPAIGN seed=98 outcome=victory node=9 steps=80 battles=4 final_battle_sever_events=2
+CAMPAIGN seed=98 outcome=victory node=9 steps=80 battles=4 final_battle_sever_events=2
+CAMPAIGN seed=99 outcome=victory node=9 steps=152 battles=8 final_battle_sever_events=3
+CAMPAIGN seed=99 outcome=victory node=9 steps=152 battles=8 final_battle_sever_events=3
+CAMPAIGN seed=100 outcome=victory node=9 steps=183 battles=8 final_battle_sever_events=3
+CAMPAIGN seed=100 outcome=victory node=9 steps=183 battles=8 final_battle_sever_events=3
+PROVISIONAL COMBAT: 15391 checks; 0 failures; 20 seeds played twice; 38 wins, 2 defeats, 596 explicit Severs, 4934 campaign commands. Pure-model tests of restored code; original-game parity and human playability unverified.

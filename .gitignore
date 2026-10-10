@@ -40,3 +40,8 @@ verification/**/*.import
 # Verification-only scripts are invoked by path, not resource UID.
 *_selftest.gd.uid
 balance_review.gd.uid
+
+# Phase-0 probes are invoked by path, not generated resource UID.
+verification/**/*.gd.uid
+# Native QA images stay in the private evidence attachment, outside public Git.
+verification/provisional-combat/*-native-*.jpg

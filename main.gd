@@ -347,6 +347,8 @@ func wrap_button(text: String, max_width: float, text_size: int = 18) -> String:
 func refresh(save_journey: bool = true) -> void:
 	port_ui_generation += 1
 	port_hover = -1
+	if model.provisional_combat() and model.phase=="battle" and selected_part>=0 and selected_part<model.parts.size() and not model.parts[selected_part].severed:
+		model.run.combat.ui_target=selected_part
 	if save_journey and model.persist_meta and not model.run.is_empty():
 		model.save_resume()
 	sync_save_notices()
@@ -401,7 +403,7 @@ func show_menu() -> void:
 	var i: int = 0
 	for key in ["vitality", "force", "focus"]:
 		var level: int = model.meta.get("upgrades",{}).get(key,0)
-		var effect: String = {"vitality": "+5 max HP", "force": "+2 damage", "focus": "+1 max Focus"}[key]
+		var effect: String = {"vitality": "+5 max HP", "force": "+2 damage", "focus": "+5 max MP"}[key]
 		var cost: int = model.upgrade_cost(key)
 		var unavailable: bool = model.phase not in ["title", "victory", "defeat"] or level >= 5 or int(model.meta.get("essence",0)) < cost
 		var price: String = "MAX" if level >= 5 else "%d ash" % cost
@@ -612,7 +614,10 @@ func restore_battle_selection() -> void:
 		if model.heroes[i].hp>0:
 			selected_hero=i
 			if not model.heroes[i].acted: break
-	if model.provisional_combat() and model.active_actor() >= 0: selected_hero=model.active_actor()
+	if model.provisional_combat():
+		if model.active_actor() >= 0: selected_hero=model.active_actor()
+		var saved_target: int=int(model.run.combat.get("ui_target",selected_part))
+		if saved_target>=0 and saved_target<model.parts.size() and not model.parts[saved_target].severed: selected_part=saved_target
 
 func cycle_part(direction: int) -> void:
 	if finisher_active(): return
@@ -682,7 +687,9 @@ func finish_round() -> void:
 	enemy_source = int(model.intent.get("part",0))
 	enemy_wards=[false,false,false]
 	for attack in forecast.attacks:
-		if attack.status=="warded":
+		if model.provisional_combat():
+			for h in attack.get("parried",[]): enemy_wards[int(h)]=true
+		elif attack.status=="warded":
 			for h in attack.targets: enemy_wards[h]=true
 	enemy_flash=1.1
 	var before: Array[int]=[]
@@ -708,8 +715,8 @@ func draw_enemy_feedback() -> void:
 	var rise: float = (1.1-enemy_flash)*40.0
 	for i in range(3):
 		if enemy_wards[i]:
-			combat_feedback.draw_string_outline(font,party_feet[i]+Vector2(-26,-117-rise),display_text("WARD"),HORIZONTAL_ALIGNMENT_LEFT,-1,24,3,Color(0.035,0.06,0.08,alpha))
-			combat_feedback.draw_string(font,party_feet[i]+Vector2(-26,-117-rise),display_text("WARD"),HORIZONTAL_ALIGNMENT_LEFT,-1,24,Color(0.48,0.84,0.77,alpha))
+			combat_feedback.draw_string_outline(font,party_feet[i]+Vector2(-26,-117-rise),(PortUI.loc("PARRY","패링") if model.provisional_combat() else display_text("WARD")),HORIZONTAL_ALIGNMENT_LEFT,-1,24,3,Color(0.035,0.06,0.08,alpha))
+			combat_feedback.draw_string(font,party_feet[i]+Vector2(-26,-117-rise),(PortUI.loc("PARRY","패링") if model.provisional_combat() else display_text("WARD")),HORIZONTAL_ALIGNMENT_LEFT,-1,24,Color(0.48,0.84,0.77,alpha))
 		if enemy_losses[i] <= 0: continue
 		var point: Vector2 = party_feet[i]+Vector2(0,-55)
 		var color: Color = Color(1.0,0.48,0.34,alpha)
@@ -1120,7 +1127,7 @@ func display_text(source: String) -> String:
 		# itself remains exact passthrough for canonical model/save compatibility.
 		translated = translated.replace("essence", "ash").replace("Essence", "Ash").replace("ESSENCE", "ASH")
 		if not model.provisional_combat(): translated = translated.replace(" MP", " Focus").replace("FOCUS", "Focus").replace(" focus", " Focus")
-	if model.provisional_combat(): translated = translated.replace("집중", "MP").replace("Focus", "MP").replace("focus", "MP")
+	if model.provisional_combat(): translated = translated.replace("집중", "MP").replace("Focus", "MP").replace("FOCUS", "MP").replace("focus", "MP")
 	return translated
 
 func apply_language_theme() -> void:

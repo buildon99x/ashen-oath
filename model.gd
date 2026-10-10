@@ -1270,6 +1270,8 @@ func _valid_provisional_journey(s: Dictionary) -> bool:
 		if bool(p.broken) != (int(p.shield)==0) or (p.severed and (not p.broken or int(p.hp)!=0)): return false
 	if not s.run.get("combat",null) is Dictionary: return false
 	var c: Dictionary = s.run.combat
+	if c.has("ui_target"):
+		if not _whole(c.ui_target,0,s.parts.size()-1): return false
 	if c.get("schema",0)!=1 or c.get("mode","") not in ["turn","counter","complete"] or not c.get("enemy_resolved",null) is bool: return false
 	if not c.get("queue",null) is Array or c.queue.is_empty() or c.queue.size()>4 or not c.get("counter_queue",null) is Array or c.counter_queue.size()>3: return false
 	if not c.get("events",null) is Array or c.events.size()>80 or not _whole(c.get("cursor",null),0,c.queue.size()-1): return false

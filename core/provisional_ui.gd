@@ -35,11 +35,12 @@ static func draw(g) -> void:
 		var lines: Array[String] = []
 		for value: Variant in attack.targets:
 			var target: int = int(value)
-			lines.append("%s  HP -%d" % [g.display_text(str(m.heroes[target].name)),attack.losses[target]])
-		if attack.status=="cancelled": lines=[loc("SOURCE STOPPED / NO ATTACK","부위 무력화 / 공격 취소")]
-		elif attack.status=="warded": lines.append(loc("PARRY → FREE COUNTER","패링 → 무료 반격"))
+			lines.append("%s  HP -%d%s" % [g.display_text(str(m.heroes[target].name)),attack.losses[target],loc(" / PARRY"," / 패링") if target in attack.get("parried",[]) else ""])
+		if m.run.combat.enemy_resolved: lines=[loc("ENEMY ACTION ALREADY RESOLVED","이번 적 행동 완료")]
+		elif attack.status=="cancelled": lines=[loc("SOURCE STOPPED / NO ATTACK","부위 무력화 / 공격 취소")]
+		elif attack.status=="warded" and not threat.counters.is_empty(): lines.append(loc("PARRY → FREE COUNTER","패링 → 무료 반격"))
 		paragraph(g,"\n".join(lines),Vector2(40,y+28),290,17,g.omen_shade(str(attack.status)))
-	paragraph(g,loc("Break stops the next enemy phase. Sever removes its move. Defend halves damage. Match Parry to the incoming height.","붕괴는 다음 적 행동을 취소합니다. 절단은 기술을 영구 제거합니다. 방어는 피해 절반, 패링은 공격 높이를 맞추세요."),Vector2(40,435),290,15,g.TEAL)
+	paragraph(g,loc("Break blocks that limb through next enemy phase. Sever removes its move. Guard halves; Parry matches height.","붕괴한 부위는 적 행동 때 공격하지 못합니다. 절단은 기술을 영구 제거합니다. 방어는 피해 절반, 패링은 높이를 맞추세요."),Vector2(40,435),290,15,g.TEAL)
 	var names: Array[String] = []
 	for value: Variant in m.run.combat.queue:
 		var index: int = int(value)
@@ -85,6 +86,11 @@ static func draw(g) -> void:
 		b.mouse_entered.connect(g.set_port_hover.bind(i,g.port_ui_generation))
 		b.mouse_exited.connect(g.clear_port_hover.bind(i,g.port_ui_generation))
 		b.tooltip_text=loc("Matching height deals full damage; mismatch deals half. MP is paid once, each allocated EP adds one hit.","공격 높이가 맞으면 온전한 피해, 다르면 절반입니다. MP는 한 번만 소비하며 EP마다 타격이 1회 늘어납니다.") if i!=3 else loc("Recover the displayed capped MP. Guard lasts until next round.","표시된 MP만큼 상한까지 회복합니다. 방어는 다음 라운드까지 유지됩니다.")
+		if prediction.has("party_heal") and prediction.party_heal.max()>0:
+			var healed: Array[String]=[]
+			for ally in range(m.heroes.size()): healed.append("%s +%d" % [g.display_text(str(m.heroes[ally].name)),prediction.party_heal[ally]])
+			b.tooltip_text += "\n"+loc("Party HP once per action: ","행동당 한 번 아군 체력: ")+", ".join(healed)
+
 	var end_copy: String=loc("SPACE / RESOLVE ENEMY","SPACE / 적 행동 진행") if current<0 else (loc("SPACE / PASS COUNTER","SPACE / 반격 넘기기") if is_counter else loc("SPACE / PASS THIS HERO","SPACE / 현재 영웅 넘기기"))
 	button(g,end_copy,Rect2(1060,689,340,88),g.request_end_round,true,false,17)
 	var event_lines: Array[String]=[]
@@ -97,7 +103,7 @@ static func event_text(g,e: Dictionary) -> String:
 	var part: String = g.display_text(str(g.model.parts[int(e.part)].name)) if e.has("part") else ""
 	match str(e.kind):
 		"hit": return loc("Hit %d → %s · %d damage%s","%d번째 타격 → %s · 피해 %d%s") % [e.hit,part,e.damage,"" if e.height_match else loc(" / wrong height: half"," / 높이 불일치: 절반")]
-		"break": return loc("BREAK: %s · next enemy phase stopped","붕괴: %s · 다음 적 행동 취소") % part
+		"break": return loc("BREAK: %s · blocked through next enemy phase","붕괴: %s · 다음 적 행동 때 이 부위 공격 취소") % part
 		"sever": return loc("SEVER: %s · linked move permanently removed","절단: %s · 연결 기술 영구 제거") % part
 		"defend": return loc("Defend · MP +%d · half incoming damage","방어 · MP +%d · 받는 피해 절반") % e.mp
 		"parry_stance": return loc("Parry stance: ","패링 준비: ")+g.display_text(str(e.height))
@@ -113,6 +119,6 @@ static func guide(g, coach: bool = false) -> void:
 	g.ui.add_child(blocker)
 	g.panel_at(Rect2(245,100,950,700))
 	label(g,loc("ASHEN PROVISIONAL COMBAT","ASHEN 임시 전투 안내"),Vector2(285,135),28,g.GOLD,850)
-	var text: String=loc("Original-game equality is unverified. These explicit Ashen rules make the combat playable.\n\n1. Follow the turn queue. EP starts at2, cap6. [ / ] or wheel selects0–3 Boost. Each EP adds a hit; MP is paid once. Spend no EP to recover2 next round.\n\n2. Match attack height for full damage; other heights deal half. Break cancels the next enemy phase. Surviving limbs then recover shields. Broken legs lower other targets.\n\n3. Wound an exposed limb to0HP, then use F / Sever on another hero turn for1EP. Its move is removed permanently. Severed legs keep the enemy collapsed.\n\n4. R / Defend halves damage and restores up to15MP. T / Parry costs5MP: select the incoming source height. Success grants a free Q Counter; a mismatch takes full damage.\n\n5. Space passes only this actor or resolves the enemy. Counter uses the same height and relic checks. Your selected ruleset and turn state are saved.\n\nMap, rewards and growth currently remain transitional Ashen content.","원작과의 동일성은 미검증입니다. 전투를 진행할 수 있도록 명시한 Ashen 임시 규칙입니다.\n\n1. 차례대로 행동하세요. 시작 EP 2, 상한 6. [ / ] 또는 휠로 최대 3을 배분합니다. EP마다 타격이 1회 늘고 MP는 한 번만 소비합니다. EP를 쓰지 않으면 다음 라운드에 2 회복합니다.\n\n2. 높이가 맞으면 온전한 피해, 다르면 절반입니다. 붕괴는 다음 적 행동을 취소합니다. 살아 있는 부위는 그 뒤 방어막을 회복합니다. 다리 붕괴는 다른 부위 높이를 낮춥니다.\n\n3. 노출된 부위 체력을 0으로 만든 뒤 다른 영웅 차례에 F / 절단(EP 1)을 사용하세요. 연결 기술을 영구 제거하며 다리 절단은 높이 저하를 유지합니다.\n\n4. R / 방어는 피해 절반·MP 최대 15 회복. T / 패링(MP 5)은 공격의 높이를 맞추세요. 성공하면 무료 Q 반격, 틀리면 피해를 그대로 받습니다.\n\n5. Space는 현재 영웅만 넘기거나 적 행동을 진행합니다. 반격에도 같은 높이·유물 규칙이 적용됩니다. 규칙과 차례 상태는 저장됩니다.\n\n지도·보상·성장은 아직 기존 Ashen 콘텐츠입니다.")
+	var text: String=loc("Original-game equality is unverified. These explicit Ashen rules make the combat playable.\n\n1. Follow the turn queue. EP starts at2, cap6. [ / ] or wheel selects0–3 Boost. Each EP adds a hit; MP is paid once. Spend no EP to recover2 next round.\n\n2. Match attack height for full damage; other heights deal half. Break stops that limb through the next enemy phase. Surviving limbs then recover shields. Broken legs lower other targets.\n\n3. Wound an exposed limb to0HP, then use F / Sever on another hero turn for1EP. Its move is removed permanently. Severed legs keep the enemy collapsed.\n\n4. R / Defend halves damage and restores up to15MP. T / Parry costs5MP: select the incoming source height. Success grants a free Q Counter; a mismatch takes full damage.\n\n5. Space passes only this actor or resolves the enemy. Counter uses the same height and relic checks. Your selected ruleset and turn state are saved.\n\nMap, rewards and growth currently remain transitional Ashen content.","원작과의 동일성은 미검증입니다. 전투를 진행할 수 있도록 명시한 Ashen 임시 규칙입니다.\n\n1. 차례대로 행동하세요. 시작 EP 2, 상한 6. [ / ] 또는 휠로 최대 3을 배분합니다. EP마다 타격이 1회 늘고 MP는 한 번만 소비합니다. EP를 쓰지 않으면 다음 라운드에 2 회복합니다.\n\n2. 높이가 맞으면 온전한 피해, 다르면 절반입니다. 붕괴한 부위의 공격은 다음 적 행동 때 취소됩니다. 살아 있는 부위는 그 뒤 방어막을 회복합니다. 다리 붕괴는 다른 부위 높이를 낮춥니다.\n\n3. 노출된 부위 체력을 0으로 만든 뒤 다른 영웅 차례에 F / 절단(EP 1)을 사용하세요. 연결 기술을 영구 제거하며 다리 절단은 높이 저하를 유지합니다.\n\n4. R / 방어는 피해 절반·MP 최대 15 회복. T / 패링(MP 5)은 공격의 높이를 맞추세요. 성공하면 무료 Q 반격, 틀리면 피해를 그대로 받습니다.\n\n5. Space는 현재 영웅만 넘기거나 적 행동을 진행합니다. 반격에도 같은 높이·유물 규칙이 적용됩니다. 규칙과 차례 상태는 저장됩니다.\n\n지도·보상·성장은 아직 기존 Ashen 콘텐츠입니다.")
 	paragraph(g,text,Vector2(285,196),850,18)
 	button(g,loc("ENTER / START BATTLE","ENTER / 전투 시작") if coach else loc("CLOSE GUIDE","안내 닫기"),Rect2(825,729,330,50),g.dismiss_first_battle_coach if coach else func(): g.help_open=false;g.refresh(),true)
