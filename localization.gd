@@ -22,6 +22,7 @@ const CATALOG: Dictionary = {
 	"Choose an intact part.": "절단되지 않은 부위를 선택하세요.",
 	"Wait for this hero's turn, choose an intact target, and check MP.": "이 영웅의 차례인지, 대상 부위가 남아 있는지, MP가 충분한지 확인하세요.",
 	"Historical Defend evidence is unavailable.": "방어 회복의 역사 규칙 근거를 불러올 수 없습니다.",
+	"This limb is spent. Sever it or choose another living limb.": "이 부위의 체력은 0입니다. 절단하거나 살아 있는 다른 부위를 고르세요.",
 	"Parry needs your turn, an intact height target and 5 MP.": "패링에는 현재 차례, 남아 있는 높이 대상, MP 5가 필요합니다.",
 	"Sever requires the current hero's normal turn.": "절단은 현재 영웅의 일반 차례에서 사용할 수 있습니다.",
 	"Sever requires an exposed zero-HP limb and 1 EP.": "절단에는 노출된 체력 0 부위와 EP 1이 필요합니다.",

@@ -21,6 +21,7 @@ func _initialize() -> void:
 	_test_mp_and_recovery()
 	_test_initiative_and_delayed_break()
 	_test_explicit_sever_and_posture()
+	_test_spent_limb_choices()
 	_test_defend()
 	_test_parry_and_counter()
 	_test_enemy_batch_and_death()
@@ -181,7 +182,7 @@ func _test_multi_hit_and_height() -> void:
 		hit_model.heroes[0].ep = 6
 		accepted(hit_model, hit_model.allocate_boost(0,boost), "allocate hit-matrix Boost")
 		accepted(hit_model, hit_model.act(0,0,1), "execute hit-matrix attack")
-		check(event_count(hit_model,"hit") == boost+1 and hit_model.heroes[0].ep == 6-boost, "Boost %d means %d actual hits and exact spend" % [boost,boost+1])
+		check(event_count(hit_model,"hit") == mini(boost+1,3) and hit_model.heroes[0].ep == 6-boost, "Boost %d respects spent-limb cutoff and exact allocated spend" % boost)
 
 func _test_mp_and_recovery() -> void:
 	var m = fresh()
@@ -264,13 +265,76 @@ func _test_explicit_sever_and_posture() -> void:
 	rejected(waiting, func(): return waiting.sever(0,0), "Sever requires one EP")
 	rejected(waiting, func(): return waiting.sever(0,1), "healthy shielded limb cannot be Severed")
 
+func _test_spent_limb_choices() -> void:
+	var m=fresh()
+	make_exposed(m,0,0)
+	m.boss.hp=20
+	check(not m.preview_action(0,0,0).valid and m.preview_action(0,0,0).spent_limb,"spent limb cannot farm exposed body damage")
+	rejected(m,func(): return m.act(0,0,0),"spent normal attack preserves turn and resources")
+	rejected(m,func(): return m.act(0,2,0),"spent paid skill preserves turn and resources")
+	accepted(m,m.sever(0,0),"spent limb remains a manual Sever target")
+	check(m.boss.hp==5 and m.run.karma==1,"Sever keeps its explicit rupture and Karma reward")
+	var burst=fresh()
+	make_exposed(burst,0,1)
+	accepted(burst,burst.allocate_boost(0,2),"reserve excess hits before spent boundary")
+	check(burst.preview_action(0,0,0).hits==1 and burst.preview_action(0,0,0).allocated_hits==3,"forecast cancels extra hits once limb is spent")
+	accepted(burst,burst.act(0,0,0),"burst stops at spent limb")
+	check(event_count(burst,"hit")==1 and burst.parts[0].hp==0 and burst.heroes[0].ep==0,"allocated EP pays once but no extra corpse hits occur")
+	var source=fresh()
+	make_exposed(source,0,0)
+	for cycle in range(6):
+		for h: Dictionary in source.heroes: h.hp=h.max_hp
+		next_round(source)
+		for attack: Dictionary in source.get_intent_attacks(): check(attack.part!=0,"spent source cannot grant recurring idle enemy turns")
+	var late=fresh()
+	make_exposed(late,0,1)
+	Combat._prepare_intent(late)
+	check(late.intent.part==0 and late.preview_intent().losses==[0,0,0],"positive-HP delayed Break remains an eligible suppressed source")
+	var trapped=pending_counter()
+	for part in range(3): make_exposed(trapped,part,0)
+	trapped.boss.hp=100
+	for h: Dictionary in trapped.heroes:
+		h.ep=0
+		h.spent_ep=true
+	check(trapped.phase=="battle","all zero-HP parts never auto-win before Sever")
+	check(trapped.save_resume(trapped._resume_path),"save all-spent zero-EP pending Counter")
+	var restored=reader(trapped)
+	check(restored.load_resume(trapped._resume_path) and snapshot(restored)==snapshot(trapped),"resume all-spent Counter exactly")
+	for game in [trapped,restored]:
+		for part in range(3): rejected(game,func(): return game.act(0,0,part),"Counter cannot hit spent limb")
+		accepted(game,game.end_round(),"empty Counter can always be passed")
+		check(game.round_number==2 and game.heroes[0].ep==0,"spent-EP boundary does not invent recovery")
+		next_round(game)
+		check(game.heroes[0].ep==2 and game.preview_intent().losses==[0,0,0],"unspent round restores EP with valid cancelled omen")
+		for part in range(3): accepted(game,game.sever(part,part),"manual Sever after zero-EP escape")
+		check(game.phase=="reward" and game.boss.hp==55 and game._intact_parts().is_empty(),"all manual Severs win with body remaining")
+	check(snapshot(trapped)==snapshot(restored),"spent-limb escape remains identical after resume")
+	var converged=fresh()
+	converged.boss.tier=2
+	converged.round_number=2
+	Combat._prepare_intent(converged)
+	check(converged.intent.targets==converged.intent.secondary.targets and converged.intent.part!=converged.intent.secondary.part,"later encounter shows two sources threatening the same hero")
+	var threatened: int=int(converged.intent.targets[0])
+	converged.heroes[threatened].parry_height=Combat.effective_height(converged,int(converged.intent.part))
+	check(converged.preview_intent().losses[threatened]>0,"one-height Parry does not nullify a two-height threat")
+	converged.heroes[threatened].parry_height=""
+	var converged_before: Dictionary=snapshot(converged)
+	check(converged.preview_action(threatened,3,0).incoming_loss==23,"Defend skill preview shows exact two-attack incoming loss before commit")
+	check(snapshot(converged)==converged_before,"Defend hypothetical forecast does not change live stances or HP")
+	converged.heroes[threatened].guard=true
+	check(converged.preview_intent().losses[threatened]==23,"Defend forecasts ceil-half of both attacks exactly")
+	converged.heroes[threatened].guard=false
+	converged.heroes[threatened].parry_height=Combat.effective_height(converged,int(converged.intent.part))
+	make_exposed(converged,int(converged.intent.secondary.part),1)
+	check(converged.preview_intent().losses[threatened]==0,"Break alternate source plus matching Parry avoids both threats")
+
 func _test_defend() -> void:
 	var m = fresh()
 	m.heroes[0].mp = 54
 	m.heroes[0].hp = 40
 	accepted(m, m.allocate_boost(0,2), "reserve before Defend")
 	var p: Dictionary = m.preview_action(0,3,0)
-	check(p.focus == 6 and p.heal == 0 and p.valid, "Defend previews actual capped MP gain and no base heal")
+	check(p.focus == 6 and p.heal == 0 and p.valid and p.incoming_loss==11, "Defend previews actual capped MP gain and no base heal")
 	accepted(m, m.act(0,3,0), "Defend")
 	check(m.heroes[0].mp == 60 and m.heroes[0].hp == 40 and m.heroes[0].ep == 2 and m.heroes[0].boost == 0 and not m.heroes[0].spent_ep, "Defend caps MP and clears unspent allocation without spending")
 	m.intent.wardable = true
@@ -287,6 +351,15 @@ func _test_defend() -> void:
 	check(relic.preview_action(0,3,0).heal == 2, "relic heal preview caps to missing HP")
 	accepted(relic, relic.act(0,3,0), "Defend with healing relic")
 	check(relic.heroes[0].hp == relic.heroes[0].max_hp and relic.heroes[0].mp == 15, "Defend relic heals two and grants nominal fifteen from zero")
+	var fragile=fresh()
+	add_relic(fragile,"cinder_heart")
+	fragile.heroes[0].hp=1
+	var before_defend: Dictionary=snapshot(fragile)
+	check(fragile.preview_action(0,3,0).heal==3 and fragile.preview_action(0,3,0).incoming_loss==4,"Defend incoming cap includes heal before enemy damage")
+	check(snapshot(fragile)==before_defend,"Defend preview with healing preserves complete state")
+	accepted(fragile,fragile.act(0,3,0),"fragile hero Defend heals before forecast")
+	check(fragile.preview_intent().losses[0]==4,"actual defended stance matches prior heal-aware forecast")
+
 
 func pending_counter():
 	var m = fresh()
@@ -633,7 +706,7 @@ func campaign_step(m, seed_value: int) -> bool:
 				if candidate > score:
 					target = part
 					score = candidate
-			return m.act(actor,skill,target) if target >= 0 else false
+			return m.act(actor,skill,target) if target >= 0 else m.end_round()
 		"reward": return m.choose_reward(0 if seed_value%2 == 0 else 2)
 		"event", "camp", "relic":
 			for option in range(m.event.options.size()):

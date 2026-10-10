@@ -1,19 +1,17 @@
 # Native builds
 
-**Checkpoint 12 source verification:** Korean/English display and transactional save recovery now have dedicated regression suites. Native lifecycle checks are documented separately in the test report. Current Windows/Linux exports are blocked by missing official 4.6.3 templates. Previously delivered native archives are checkpoint 5 and do not contain the new background/actor art.
+**Current source: Godot 4.7.2.** The provisional combat source and exported resource pack have separate [verification records](verification/provisional-combat/README.md). Latest standalone Windows/Linux exports have not been produced because matching export templates are not installed. Previously delivered checkpoint-5 archives do not contain the current art or combat rules.
 
-The repository includes original Godot source plus packaged Windows x64 and Linux x64 releases.
-The packages run without a separately installed Godot editor. Each ZIP contains a native executable
-with embedded game data, launch instructions, and Godot license notices.
+The supplied export scripts can produce native executables with embedded game data and license notices once matching official templates are provided. A tested `.pck` is not itself a standalone executable.
 
 ## Requirements
 
-- Official Godot **4.6.3 stable** editor (`godot` on PATH, or set `GODOT`)
+- Official Godot **4.7.2 stable** editor (`godot` on PATH, or set `GODOT`)
 - Matching official export templates from https://godotengine.org/download/
 - Bash and Python 3 for the supplied cross-export script
 
 Do not use template binaries from unknown sources. The official download entry point is:
-https://downloads.godotengine.org/?flavor=stable&platform=templates&slug=export_templates.tpz&version=4.6.3
+https://downloads.godotengine.org/?flavor=stable&platform=templates&slug=export_templates.tpz&version=4.7.2
 
 ## Build on Linux
 
@@ -24,7 +22,7 @@ https://downloads.godotengine.org/?flavor=stable&platform=templates&slug=export_
 To supply a template directory explicitly and use an output folder outside the checkout:
 
 ```sh
-GODOT_TEMPLATE_DIR=/path/to/4.6.3.stable ./scripts/build.sh /absolute/output/path
+GODOT_TEMPLATE_DIR=/path/to/4.7.2.stable ./scripts/build.sh /absolute/output/path
 ```
 
 The template directory must contain `linux_release.x86_64` and `windows_release_x86_64.exe`.
@@ -42,9 +40,13 @@ see the current test report for separately performed screen-based checks.
 
 ## Source tests without export templates
 
-Run `./scripts/test.sh`. Each suite receives an isolated save/config/cache profile under `.runtime/tests/`; no played campaign is modified. The script rejects Godot script errors even if the engine exits with status zero. It includes Korean glyph/layout checks, transactional-save corruption and interruption fixtures, and a separate fresh-profile startup test. These automated suites complement, rather than replace, native human-input play.
+Run `./scripts/test.sh`. Each suite receives an isolated HOME/data/config/cache profile under `.runtime/tests/`; no played campaign is modified. The script rejects Godot script errors even if the engine exits with status zero. It includes Korean glyph/layout checks, transactional-save corruption and interruption fixtures, and a separate fresh-profile startup test. These automated suites complement, rather than replace, native human-input play.
 
 The Korean display font is bundled with its SIL OFL license. Future native packages include that notice alongside the existing font and engine licenses.
+
+## Resource pack without platform templates
+
+Run `GODOT=/path/to/Godot_v4.7.2 scripts/test-package.sh`. It exports a PCK, then loads the actual packed JSON rules and model, executes Defend and validates checkpoint writing under a fresh profile. Export logs are scanned because the editor can exit successfully after an import error. This does not replace native-platform runtime testing.
 
 ## Outputs
 
@@ -60,6 +62,6 @@ commit `.godot/`, `.runtime/`, editor caches, or the export templates.
 
 ## Manual editor exports
 
-Open `project.godot` with Godot 4.6.3, install its matching templates, then use
+Open `project.godot` with Godot 4.7.2, install its matching templates, then use
 Project → Export → **Windows x64** or **Linux x64**. Both presets are checked in as
 `export_presets.cfg` and embed the game data in the executable.

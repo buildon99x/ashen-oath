@@ -1,0 +1,11 @@
+Ashen provisional scripted strategy comparison
+Baseline: 597788546b80f6deecfed0e0488f4bd37b26caff
+Seeds 81..100. No target-game parity or human-playability claim.
+A = offensive/Sever policy; B = Parry/Defend/Counter policy with terminal cleanup.
+baseline/A: 19 wins, 1 defeats; 113 battles; damage 5150; enemy phases 477; direct 1038; boosted 707 (1306 EP); Sever 298; Parry 0; Defend 299; Counter 0; rejected 0; softlocks 0
+baseline/B: 20 wins, 0 defeats; 114 battles; damage 0; enemy phases 3635; direct 0; boosted 0 (0 EP); Sever 0; Parry 3505; Defend 7400; Counter 3481; rejected 0; softlocks 0
+candidate/A: 17 wins, 3 defeats; 110 battles; damage 4487; enemy phases 502; direct 1022; boosted 701 (1291 EP); Sever 301; Parry 0; Defend 286; Counter 0; rejected 0; softlocks 0
+candidate/B: 8 wins, 12 defeats; 90 battles; damage 8897; enemy phases 4025; direct 0; boosted 0 (0 EP); Sever 0; Parry 3254; Defend 8510; Counter 3207; rejected 0; softlocks 0
+Totals are exposure-dependent: defeated campaigns play fewer battles. Compare matched seed/node battle rows before judging damage or speed.
+All raw campaign/battle states and decision traces are in choice-review.json; no balance recommendation is inferred automatically.
+Failures: 0

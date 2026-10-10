@@ -1,0 +1,13 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: PROVISIONAL UI FAIL: help text clears close control / en
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://provisional_ui_selftest.gd:13)
+       [1] run_tests (res://provisional_ui_selftest.gd:171)
+ERROR: PROVISIONAL UI FAIL: help text clears close control / ko
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://provisional_ui_selftest.gd:13)
+       [1] run_tests (res://provisional_ui_selftest.gd:171)
+PROVISIONAL UI: 175 checks; 2 failures. Headless handlers, not visual QA.

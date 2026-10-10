@@ -1,0 +1,20 @@
+{
+  "engine": "4.7.2.stable.official.ed1daf0bf",
+  "source_sha256": {
+    "core/provisional_combat.gd": "7e7e371a4d5424181b154817910bd7804b985a91025fb42378dd9d1480f17cce",
+    "core/provisional_ui.gd": "c1dc2e86cf101eff335a4dab935afb80e7152e76ddc5b141f987ceca1d7b9997",
+    "provisional_combat_selftest.gd": "8011b1cc661d09809c6b1a6bf714df84771d9b3f278ca50384b0215704c30419",
+    "provisional_ui_selftest.gd": "a710f3cc8aab8033df62feda40f8f3f45c869412459482adecedf110d5009f65",
+    "rulesets/ashen_provisional_v1/profile.json": "0bb0ab4e5f62a10b42d82d6f35f848af291478d204f120c822e3a2b4ed6490fd",
+    "scripts/test.sh": "a2b4c3ce0a84013b78e9dccd20373f5d4b10c4697e06fd03619dfa08321e6909",
+    "scripts/test-package.sh": "0863d438c9bf84dbdc818ec57540f859bf745ffb0deb350e068d2a4b1c396923"
+  },
+  "source_suites": 19,
+  "source_suite_log": "choice-final-suite.log",
+  "package_log": "choice-final-package.log",
+  "native_launches": 6,
+  "native_clean_exits": 6,
+  "original_parity": false,
+  "standalone_export": false,
+  "growth_exploration_complete": false
+}

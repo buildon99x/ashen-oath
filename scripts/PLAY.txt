@@ -1,5 +1,5 @@
 ASHEN OATH - The Hollow Crown
-Original turn-based roguelite, built with Godot 4.6.3
+Original turn-based roguelite, release tooling for Godot 4.7.2
 
 START
 Windows x64: Extract the entire ZIP, then open ashen-oath.exe.
@@ -11,13 +11,20 @@ CONTROLS
 Mouse: all menus, hero/part/skill selection
 1 / 2 / 3: select a hero
 Up / Down: select an enemy part
-Q / W / E: skill; R: guard; Space: end round
+Q / W / E: skill; R: Defend; T: Parry; F: manual Sever
+[ / ] or wheel: reserve/cancel Boost; Space: pass actor/counter or resolve enemy
 H: guide; M: mute sound; Escape: menu / return
 L: Korean / English (saved separately); B: build / relics; V: character studio
 
-Combat: match an attack to a part's weakness to break its armor.
-Destroy the part to stop its attacks. Every living hero acts once each round.
-Read OMEN before ending the round. Route choices, relics, and rest matter.
+New journeys use explicitly provisional Ashen combat, not verified source-game rules.
+EP starts at 2, cap 6. Boost adds hits; MP is paid once. Spend no EP in a round
+for +2 EP afterward. Defend halves incoming damage and restores up to 15 MP.
+Read the actual limb source, height and damage in OMEN. Matching-height Parry
+costs 5 MP and grants a free normal Counter on success. Break blocks its source.
+Wound an exposed limb to zero, then manually Sever with 1 EP on a normal turn.
+Choose another living limb or Pass/Defend to recover EP when needed. Every
+limb severed or body HP zero wins. Older saved journeys keep legacy rules.
+Map, rewards and permanent growth are still transitional Ashen content.
 Permanent Ash upgrades are saved automatically in your user data directory.
 The current journey and Ash vault save together after each accepted choice.
 Resume from the title screen. A save-error warning means recent actions may

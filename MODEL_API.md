@@ -1,6 +1,19 @@
 # Ashen Oath rules model
 
-`model.gd` is a standalone Godot 4 `RefCounted` class named `OathModel`. It has no scene, asset, plugin or network dependencies. All content and rules here are original. UI code should treat its dictionaries as read-only and use commands to change state.
+`model.gd` is a standalone Godot 4 `RefCounted` class named `OathModel`. It has no scene, asset, plugin or network dependencies. The legacy content is independently authored; separately marked historical effects and provisional combat rules are described below. UI code should treat its dictionaries as read-only and use commands to change state.
+
+## Saved ruleset dispatch
+
+The command/state details below describe the default **legacy** API and older saves. `new_run(seed_value, combat_profile="legacy")` retains that compatibility default. The playable menu explicitly passes `"ashen_provisional_v1"`; unknown profiles are rejected. Its active combat path differs from the legacy rules below:
+
+- `active_actor()` identifies the current hero, enemy (-1), or no battle actor (-2).
+- `allocate_boost(hero, value)` reserves/cancels EP for the current normal turn without spending it.
+- `parry(hero, part)` and `sever(hero, part)` are explicit actions.
+- `end_round()` advances only the current actor, or resolves the enemy batch; it no longer skips every remaining hero.
+- `preview_action`/`preview_intent` dispatch to the saved profile and must be checked for `valid` before reading optional attack fields.
+- `run.combat` stores initiative, pending counters, the optional selected target and break lifetimes. No automatic conversion of old journeys occurs.
+
+See [the exact temporary profile](docs/porting/PROVISIONAL_COMBAT.md) for costs, recovery, height and Sever. The legacy values below must not be used as its specification.
 
 ## Commands
 

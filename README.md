@@ -6,9 +6,11 @@
 
 오리지널 에셋·코드로 구현한 Godot 턴제 로그라이트입니다. The Severed Gods의 공식 공개 설명에서 확인한 부위별 방어 파괴와 절단, 파티 전투, 경로 선택과 윤회 성장의 핵심 루프를 참고했습니다. 원작의 전체 복제품이나 원작 분량에 상응하는 게임은 아닙니다.
 
-## 메커니즘 이식 준비 · Phase 0 미완료
+## 현재 메커니즘 이식 · 2026-10-10
 
-새 목표 버전은 The Severed Gods v0.2.102입니다. [원작 근거와 미확정 규칙](docs/porting/PHASE0.md)을 먼저 분리하고, 기존 콘텐츠 정의를 별도 legacy 모듈로 옮겼습니다. 현재 실행 가능한 게임은 이전 Ashen 규칙이며, 이 준비를 EP·Sever·스킬/유물 성장의 이식 완료로 보지 않습니다. 확인하지 못한 수치와 조건에는 기존 값을 대입하지 않습니다. Godot 4.7 설정과 이전 저장 복구를 유지합니다.
+새 여정은 실제 EP/Boost/턴 순서/높이/방어/패링/무료 반격/수동 절단을 연결한 [Ashen 임시 전투 프로필](docs/porting/PROVISIONAL_COMBAT.md)로 실행됩니다. 진행 중인 여정은 Continue로 복구하며, 이전 규칙으로 저장된 여정은 legacy 경로를 유지합니다. 사용자 승인 임시 규칙은 The Severed Gods EA0.2.102와 동일하다는 뜻이 아닙니다. [목표 버전 근거](docs/porting/PHASE0.md)와 [날짜별 역사 규칙](docs/porting/HISTORICAL_EFFECTS.md)을 따로 기록했습니다.
+
+[원본 구현 목표](docs/porting/ashen-oath-severed-gods-mechanics-porting-plan.md)의 성장·탐험·콘텐츠 범위는 아직 완료되지 않았습니다. 고정 3인/스킬, 5개 유물, 9구간과 기존 재 강화는 과도기 콘텐츠입니다. [요구사항별 실제 상태](docs/porting/IMPLEMENTATION_STATUS.md), [남은 성장 구조와 공개 근거](docs/porting/BUILD_PROGRESSION_EVIDENCE.md), [신규 검증과 실제 입력 기록](verification/provisional-combat/README.md)을 확인하세요. Godot **4.7.2 stable**로 검증했으며 이 버전의 최신 Windows/Linux 실행파일은 아직 배포하지 않았습니다. 아래 체크포인트 12 이하의 결과는 이전 규칙의 역사 기록입니다.
 
 ## 기존 구현 · 체크포인트 12
 
@@ -59,22 +61,22 @@ Cinder·Bellkeeper·Judge의 세 전투를 실제 입력으로 검증했습니�
 체크포인트 7 당시 소스와 native Godot 프로젝트 화면을 검증했습니다. 공식 export 템플릿이 없어 새 Windows/Linux 배포 실행 파일은 아직 만들지 못했습니다. 기존 실행 파일 백업은 체크포인트 5이며 새 배경과 캐릭터를 포함하지 않습니다.
 
 ## 실행
-1. 공식 https://godotengine.org/download/ 에서 Godot **4.6 이상**을 설치합니다
+1. 공식 https://godotengine.org/download/ 에서 Godot **4.7.2 stable**을 설치합니다
 2. 이 폴더의 `project.godot`를 열고 **F5**를 누릅니다
 3. Godot가 PATH에 있으면 macOS/Linux `./run.sh`, Windows `run.bat`로 실행할 수도 있습니다
 
-게임 UI는 영어입니다. 인터넷 연결·계정·외부 에셋은 실행 중 필요하지 않습니다. 이 ZIP은 소스 프로젝트입니다. 별도의 Windows/Linux 배포 ZIP에는 Godot 설치 없이 실행하는 게임 파일이 포함됩니다. Windows 빌드는 서명되지 않았으며 Windows에서의 실제 실행은 아직 검증하지 않았습니다.
+게임 UI는 한국어가 기본이며 L로 영어와 전환합니다. 인터넷 연결·계정·외부 에셋은 실행 중 필요하지 않습니다. 이 ZIP은 소스 프로젝트입니다. 별도의 Windows/Linux 배포 ZIP에는 Godot 설치 없이 실행하는 게임 파일이 포함됩니다. Windows 빌드는 서명되지 않았으며 Windows에서의 실제 실행은 아직 검증하지 않았습니다.
 
-## 플레이
-- BEGIN A NEW CYCLE: 새 여정을 시작합니다
-- 영웅 선택 → 적 부위 선택 → 스킬 사용 순서로 진행합니다
-- 약점과 같은 속성으로 부위의 방어를 깨고, 해당 부위의 HP를 소진해 절단합니다
-- 절단한 부위의 공격은 차단됩니다. OMEN에 다음 적 행동이 표시됩니다
-- 살아 있는 각 영웅은 라운드당 한 번 행동합니다. End Round로 적 행동을 진행합니다
-- 위험할 때 Guard를 사용합니다. MP는 라운드마다 회복됩니다
-- 분기 경로에서 전투·휴식·카르마 사건을 선택하고 유물로 빌드를 강화합니다
-- 여정 종료 후 얻은 Ash로 Vitality / Force / Focus 영구 강화를 구입합니다
-- 9개 구간의 캠페인을 통과해 마지막 왕관을 무너뜨리세요
+## 플레이 · 신규 임시 전투
+- 새 여정을 시작하거나 RESUME CURRENT JOURNEY로 이어갑니다
+- 표시된 현재 영웅의 차례에 부위와 스킬을 고릅니다. EP와 MP는 별도 자원입니다
+- [ / ]로 Boost를 0~3 배분합니다. EP마다 타격이 늘고 MP는 행동당 한 번 소비됩니다
+- EP를 사용하지 않은 라운드 뒤 2 EP가 회복됩니다. MP는 자연 회복되지 않으며 Defend로 최대 15 회복합니다
+- 높이·약점·방어막과 전조의 공격원을 비교하세요. Break는 해당 부위의 공격을 억제합니다
+- 노출된 부위 HP를 0으로 만든 뒤 F로 수동 절단합니다. 절단에는 일반 차례와 1 EP가 필요합니다
+- R은 받는 피해를 절반으로 줄입니다. T는 5 MP로 선택 높이에 패링을 준비하며, 성공하면 무료 Q 반격을 얻습니다
+- Space는 현재 영웅/반격을 넘기거나 적 차례를 진행합니다. 자원과 전조의 예상 결과를 보고 결정하세요
+- 지도·보상·휴식·유물·Ash 강화는 기존 과도기 콘텐츠입니다. 완료된 원작 성장 이식으로 취급하지 않습니다
 
 ### 조작
 | 입력 | 동작 |
@@ -84,7 +86,10 @@ Cinder·Bellkeeper·Judge의 세 전투를 실제 입력으로 검증했습니�
 | 위 / 아래 방향키 | 부위 선택 |
 | Q / W / E | 세 공격 스킬 |
 | R | 방어 |
-| Space | 라운드 종료 |
+| [ / ] 또는 휠 | Boost 배분/취소 |
+| T | 선택 높이에 패링 준비 |
+| F | 노출된 HP 0 부위 수동 절단 |
+| Space | 현재 차례/반격 넘기기 또는 적 행동 |
 | H | 가이드 열기/닫기 |
 | B | 현재 유물·빌드·Ash 확인 |
 | V | 4방향 캐릭터 스튜디오 |
@@ -104,10 +109,12 @@ Cinder·Bellkeeper·Judge의 세 전투를 실제 입력으로 검증했습니�
 엔진 문서: https://docs.godotengine.org/en/4.6/tutorials/export/exporting_projects.html
 
 ## 검증
-`TEST_REPORT.html`에서 실행한 검사와 미실행 범위를 확인하세요. headless 검사와 실제 native UI 플레이 검증을 구분해 기록했습니다. 첫 전투의 승리/보상과 재시작 후 저장 복구는 직접 키보드·마우스로 검증했습니다. 전체 9구간과 3보스의 직접 화면 완주도 검증했습니다. 승리 결과는 Ash 51 / Gold 153 / Karma +11이었습니다. 원작과의 동등 품질은 미달입니다.
+최신 전투는 [신규 회귀·실제 입력 기록](verification/provisional-combat/README.md)을 따릅니다. 저장 중단/복원과 첫 보스 패링·절단 승리, 보상·휴식·두 번째 전투를 실제 입력으로 확인했습니다. 전체 원작 동일성, 전체 신규 캠페인의 인간 플레이 완주 또는 전체 성장 구현을 주장하지 않습니다. 최신 게임 스크린샷은 별도 비공개 QA 첨부에만 보관하며 이 공개 저장소에 추가하지 않았습니다.
+
+`TEST_REPORT.html`과 아래 오래된 완주 수치는 이전 legacy 규칙의 검증 기록입니다. 새 전투나 원작 동등성의 근거로 재사용하지 않습니다.
 
 ## GitHub checkpoints
-The user-created `buildon99x/ashen-oath` repository is public. The initial Godot ignore rules are preserved. Native Windows/Linux exports are built and independently backed up. Repository binary distribution is not yet complete; the source project runs in Godot 4.6+. Completed archive distributions include reconstruction instructions and SHA256 checksums. Source commits and actual gameplay evidence do not imply visual parity with the commercial reference.
+The user-created `buildon99x/ashen-oath` repository is public. The initial Godot ignore rules are preserved. Native Windows/Linux exports are built and independently backed up. Repository binary distribution is not yet complete; the current source is tested with Godot 4.7.2. Older native archives do not contain this mechanics port. Completed archive distributions include reconstruction instructions and SHA256 checksums. Source commits and actual gameplay evidence do not imply visual parity with the commercial reference.
 
 ## 4방향 애니메이션 · 체크포인트 4
 세 영웅 모두 위·아래·왼쪽·오른쪽을 독립적으로 그렸습니다. 96×112 셀, 발 기준점 (48,101), 총 372프레임입니다. Idle 6프레임/6fps, Walk 8/10fps, Attack 8/12fps, Hurt 3/10fps, Death 6/8fps. 좌우를 단순 반전하지 않으며 무기 손과 장비 비대칭을 유지합니다.

@@ -1,5 +1,7 @@
 # Provenance and scope
 
+Current 2026-10-10 combat: [explicit Ashen provisional rules](docs/porting/PROVISIONAL_COMBAT.md), [historical source pins](docs/porting/HISTORICAL_EFFECTS.md), and [new verification](verification/provisional-combat/README.md). The source uses Godot 4.7.2. The descriptions below are historical checkpoint records; older height/turn rules and 4.6.3 binaries are not the current combat implementation. Full target-game parity remains unverified.
+
 Research checked 2026-10-07:
 - Topebox's official Steam store page, app 3755930, identifies The Severed Gods and describes height-based three-part combat, break/sever mechanics, reincarnation, karma, hero-specific interactions and relic builds. https://store.steampowered.com/app/3755930/The_Severed_Gods/
 - Developer's itch.io page corroborates the core feature descriptions. Some content counts differ from the current Steam page, so none were treated as an exact implementation specification. https://topeboxgames.itch.io/the-severed-gods

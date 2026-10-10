@@ -1,0 +1,20 @@
+{
+  "baseline_commit": "597788546b80f6deecfed0e0488f4bd37b26caff",
+  "baseline_original_sha256": {
+    "model.gd": "a58eb27797b330346e63fa856bd9a1efaf8a8d37ecad0b32e67e389b10c57603",
+    "core/provisional_combat.gd": "7ee26c79aa8887f5eb6b3ce66b71e573c0b365f3625fd80065e151a1a4568098"
+  },
+  "baseline_rewrite": "Remove duplicate class_name OathModel; replace only combat preload path. Combat bytes unchanged.",
+  "baseline_dependencies": "Historical effect resolver and legacy content are shared with candidate and hashed below.",
+  "candidate_head": "597788546b80f6deecfed0e0488f4bd37b26caff",
+  "candidate_working_tree_status": " M BUILDING.md\n M MODEL_API.md\n M PROVENANCE.md\n M README.md\n M core/provisional_combat.gd\n M core/provisional_ui.gd\n M docs/porting/PROVISIONAL_COMBAT.md\n M export_presets.cfg\n M localization.gd\n M provisional_combat_selftest.gd\n M provisional_ui_selftest.gd\n M rulesets/ashen_provisional_v1/profile.json\n M run.bat\n M run.sh\n M scripts/PLAY.txt\n?? docs/porting/IMPLEMENTATION_STATUS.md\n?? provisional_choice_review.gd\n?? scripts/review-provisional-choices.sh\n?? verification/provisional-combat/choice-candidate/\n",
+  "candidate_sha256": {
+    "model.gd": "a58eb27797b330346e63fa856bd9a1efaf8a8d37ecad0b32e67e389b10c57603",
+    "core/provisional_combat.gd": "7e7e371a4d5424181b154817910bd7804b985a91025fb42378dd9d1480f17cce",
+    "core/historical_effect_resolver.gd": "fdb18c77e1c24d514a934501804302ddb0c0e8f388d0c6dfaf4b6618a30d9f2b",
+    "legacy/legacy_content.gd": "a7c43134373e653295c7fae7d778a1b202693529d638554cae91f802e10fc5db",
+    "rulesets/severed_historical_effects_v1/manifest.json": "1e55669dc93846de5c7460d14ca408221ba18d36e3c3dae510f3fcd58bd68523",
+    "provisional_choice_review.gd": "45dad187a91c53aa7646a0fab21c6ad4986891b7b43c26837771955a11f4af38",
+    "scripts/review-provisional-choices.sh": "80bfc56393b309c2d4468f99ae8afdc2a203a4af15638f0162c8e0638af31bb0"
+  }
+}

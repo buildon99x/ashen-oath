@@ -98,8 +98,14 @@ static func preview(m, hero: int, skill_index: int, target: int) -> Dictionary:
 	var counter: bool = m.run.combat.mode == "counter"
 	var valid: bool = _can_act(m,hero) and int(h.mp) >= int(skill.cost) and (not counter or skill_index == 0)
 	if skill_index == 3:
-		return {"valid":valid,"guard":true,"heal":mini(3,int(h.max_hp)-int(h.hp)) if m.has_relic("cinder_heart") else 0,"focus":mini(DEFEND_MP,int(h.max_mp)-int(h.mp)),"wards":[],"summary":"HALVE ALL DAMAGE / +%d MP" % mini(DEFEND_MP,int(h.max_mp)-int(h.mp))}
+		var heal: int=mini(3,int(h.max_hp)-int(h.hp)) if m.has_relic("cinder_heart") else 0
+		var guarded: Dictionary=h.duplicate(true)
+		guarded.guard=true
+		guarded.hp=int(guarded.hp)+heal
+		var forecast: Dictionary=preview_intent(m,{hero:guarded})
+		return {"valid":valid,"guard":true,"heal":heal,"incoming_loss":int(forecast.losses[hero]),"focus":mini(DEFEND_MP,int(h.max_mp)-int(h.mp)),"wards":[],"summary":"HALVE ALL DAMAGE / +%d MP" % mini(DEFEND_MP,int(h.max_mp)-int(h.mp))}
 	if target < 0 or target >= m.parts.size() or bool(m.parts[target].severed): return {"valid":false,"summary":"Choose an intact part."}
+	if int(m.parts[target].hp) <= 0: return {"valid":false,"spent_limb":true,"hits":0,"summary":"This limb is spent. Sever it or choose another living limb."}
 	var boost: int = 0 if counter else int(h.boost)
 	valid = valid and boost <= int(h.ep)
 	var simulation: Dictionary = _simulate_attack(m,h,skill,target,boost)
@@ -127,7 +133,7 @@ static func _simulate_attack(m, h: Dictionary, skill: Dictionary, target: int, b
 	var events: Array = []
 	if bool(skill.normal): events.append({"kind":"normal_attack","hero":h.name})
 	for hit in range(allocated_hits):
-		if hp <= 0: break
+		if hp <= 0 or int(p.hp) <= 0: break
 		hits += 1
 		var exposed: bool = p.broken
 		var power: int = int(skill.power) + int(m.meta.upgrades.force)*2 + int(m.run.get("damage_bonus",0))
@@ -150,7 +156,8 @@ static func _simulate_attack(m, h: Dictionary, skill: Dictionary, target: int, b
 static func act(m, hero: int, skill_index: int, target: int) -> bool:
 	if m.phase != "battle": return m._reject("There is no battle in progress.")
 	var result: Dictionary = preview(m,hero,skill_index,target)
-	if not result.get("valid",false): return m._reject("Wait for this hero's turn, choose an intact target, and check MP.")
+	if not result.get("valid",false):
+		return m._reject(str(result.summary) if result.get("spent_limb",false) else "Wait for this hero's turn, choose an intact target, and check MP.")
 	var h: Dictionary = m.heroes[hero]
 	var skill: Dictionary = h.skills[skill_index]
 	var counter: bool = m.run.combat.mode == "counter"
@@ -272,10 +279,10 @@ static func end_turn(m) -> bool:
 	m.last_error = ""
 	return true
 
-static func preview_intent(m) -> Dictionary:
+static func preview_intent(m, hero_overrides: Dictionary = {}) -> Dictionary:
 	var result: Dictionary = {"status":"cancelled","losses":[0,0,0],"focus_losses":[0,0,0],"source":"","description":"","attacks":[],"rhythm":{},"counters":[]}
 	var remaining: Array = []
-	for h: Dictionary in m.heroes: remaining.append(int(h.hp))
+	for i in range(m.heroes.size()): remaining.append(int(hero_overrides.get(i,m.heroes[i]).hp))
 	for attack: Dictionary in m.get_intent_attacks():
 		var p: Dictionary = m.parts[int(attack.part)]
 		var cancelled: bool = p.severed or p.broken or bool(m.run.combat.enemy_resolved)
@@ -286,7 +293,7 @@ static func preview_intent(m) -> Dictionary:
 		if cancelled: lines.append("Source severed, broken, or already resolved: no attack.")
 		for target_value: Variant in attack.targets:
 			var target: int = int(target_value)
-			var h: Dictionary = m.heroes[target]
+			var h: Dictionary = hero_overrides.get(target,m.heroes[target])
 			if cancelled or int(remaining[target]) <= 0: continue
 			if str(h.parry_height) == effective_height(m,int(attack.part)):
 				lines.append("%s PARRY: 0 HP / Counter" % h.name)
@@ -333,14 +340,17 @@ static func _next_round(m) -> void:
 	m._note("ROUND %d: unspent heroes recover 2 EP; surviving broken limbs regain shields." % m.round_number)
 
 static func _prepare_intent(m) -> void:
-	var intact: Array = m._intact_parts()
+	var intact: Array = m._intact_parts().filter(func(index): return int(m.parts[int(index)].hp)>0)
+	# Keep a valid cancelled omen when all remaining limbs await manual Sever.
+	# Do not change _intact_parts: it also defines all-severed victory.
+	if intact.is_empty(): intact=m._intact_parts()
 	var part: int = int(intact[(m.round_number-1)%intact.size()]) if not intact.is_empty() else 0
 	var living: Array = m._living_heroes()
 	var target: int = int(living[(m.round_number-1)%living.size()]) if not living.is_empty() else 0
 	m.intent = {"part":part,"name":m.parts[part].move,"damage":16+int(m.boss.tier)*5,"targets":[target],"wardable":false}
 	if int(m.boss.tier) >= 2 and m.round_number%2 == 0 and intact.size() > 1:
 		var other: int = int(intact[(intact.find(part)+1)%intact.size()])
-		m.intent.secondary = {"part":other,"name":m.parts[other].move,"damage":12+int(m.boss.tier)*4,"targets":[living[(living.find(target)+1)%living.size()]],"wardable":false}
+		m.intent.secondary = {"part":other,"name":m.parts[other].move,"damage":12+int(m.boss.tier)*4,"targets":[target],"wardable":false}
 
 static func _historical(source: String, rule: String, event: Dictionary) -> Dictionary:
 	if historical_manifest.is_empty(): historical_manifest = HistoricalEffects.read_manifest()

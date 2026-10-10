@@ -26,3 +26,13 @@ An initial post-native pack attempt correctly failed its error scan because scre
 No platform export templates were downloaded for this check. A PCK tested with Godot is not a standalone Windows/Linux release binary. Native source play, pack validation and headless suites are separate verified scopes. Full growth, exploration and content parity remain outstanding.
 
 Native screenshots are deliberately excluded from this public repository. The numbered evidence referenced by NATIVE_QA.md is retained in a separate private QA attachment. The repository contains the reproducible tests and written observations, not broken image links.
+
+## Choice-repair final regression
+
+After the spent-limb/dual-height/Defend-forecast changes, all 19 invocations passed again: `choice-final-suite.log` and `choice-final/`. Provisional combat: 15,814 checks, UI: 175, historical effects: 48, save recovery: 188, default path: 14, localized UI: 36,027 across 92 contexts, localization: 159,479. The 20-seed offensive policy replayed twice exactly: 34 wins / 6 defeats, 602 Severs and 5,004 commands. The three losing seeds per pass are genuine strategy outcomes, not discarded failures. Assertions are not distinct play scenarios.
+
+The final PCK export and packaged Defend/save check passed separately in `choice-final-package.log`, `choice-final-export-pack.log` and `choice-final-packaged-combat.log`. No standalone platform binary or audio-device validation is claimed.
+
+`choice-candidate/guide-before-layout-fix.log` records a genuine English/Korean guide-boundary failure during iteration; the guide was shortened and its text size adjusted before the passing focused and final UI tests. Native screenshots 22–23 independently confirm the final layout.
+
+The [strategy comparison](../../docs/porting/CHOICE_REVIEW.md) and `choice-review/` compare 80 complete seeded campaign attempts against commit `5977885`, including the previously dominant zero-damage Parry/Defend strategy. Public artifacts contain summary CSVs, source hashes and the review log. The large per-action trace stays in the private QA archive; rerun `scripts/review-provisional-choices.sh` to regenerate it. This comparison is evidence about these two fixed policies, not proof of optimal balance or original-game equality.

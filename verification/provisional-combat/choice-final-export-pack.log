@@ -1,0 +1,190 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (6 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  14% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  28% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  42% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  57% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  71% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1m_update_scan_actions[22m | Started Scanning actions... (10 steps)[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | battles.csv[39m[0m
+[   9% ] [90m[1m_update_scan_actions[22m | campaigns.csv[39m[0m
+[  18% ] [90m[1m_update_scan_actions[22m | 16-native-dual-height-omen.jpg[39m[0m
+[  27% ] [90m[1m_update_scan_actions[22m | 17-native-defend-forecast.jpg[39m[0m
+[  36% ] [90m[1m_update_scan_actions[22m | 18-native-parry-only-takes-hit.jpg[39m[0m
+[  45% ] [90m[1m_update_scan_actions[22m | 19-native-break-and-parry.jpg[39m[0m
+[  54% ] [90m[1m_update_scan_actions[22m | 20-native-spent-counter-escape.jpg[39m[0m
+[  63% ] [90m[1m_update_scan_actions[22m | 21-native-sever-reward.jpg[39m[0m
+[  72% ] [90m[1m_update_scan_actions[22m | 22-native-choice-guide-en.jpg[39m[0m
+[  81% ] [90m[1m_update_scan_actions[22m | 23-native-choice-guide-ko.jpg[39m[0m
+[92m[ DONE ][39m [1m_update_scan_actions[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (10 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   9% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  18% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  27% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  36% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  45% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  54% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  63% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  72% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  81% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing pre-reimport operations...[39m[0m
+[   0% ] [90m[1mreimport[22m | battles.csv[39m[0m
+[   9% ] [90m[1mreimport[22m | campaigns.csv[39m[0m
+[  18% ] [90m[1mreimport[22m | battles.csv[39m[0m
+[  27% ] [90m[1mreimport[22m | campaigns.csv[39m[0m
+[  36% ] [90m[1mreimport[22m | 16-native-dual-height-omen.jpg[39m[0m
+[  45% ] [90m[1mreimport[22m | 17-native-defend-forecast.jpg[39m[0m
+[  54% ] [90m[1mreimport[22m | 18-native-parry-only-takes-hit.jpg[39m[0m
+[  63% ] [90m[1mreimport[22m | 19-native-break-and-parry.jpg[39m[0m
+[  72% ] [90m[1mreimport[22m | 20-native-spent-counter-escape.jpg[39m[0m
+[  81% ] [90m[1mreimport[22m | 21-native-sever-reward.jpg[39m[0m
+[  90% ] [90m[1mreimport[22m | Finalizing Asset Import...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (10 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing post-reimport operations...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1msavepack[22m | Started Packing (102 steps)[39m[0m
+[   1% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/cinder_forest.png-b2879d13f805f93418f490b306ee0688.ctex[39m[0m
+[   1% ] [90m[1msavepack[22m | Storing File: res://assets/environments/cinder_forest.png.import[39m[0m
+[   2% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/drowned_reliquary.png-f9a4c4134725495831147b146fae8a3f.ctex[39m[0m
+[   2% ] [90m[1msavepack[22m | Storing File: res://assets/environments/drowned_reliquary.png.import[39m[0m
+[   3% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/drowned_reliquary_arena.webp-e593f859085154d35d2418a88d5760a1.ctex[39m[0m
+[   3% ] [90m[1msavepack[22m | Storing File: res://assets/environments/drowned_reliquary_arena.webp.import[39m[0m
+[   5% ] [90m[1msavepack[22m | Storing File: res://assets/environments/firelit_arena.json[39m[0m
+[   6% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/firelit_arena.webp-c16195c6b313f19db3c1d4f85163b76b.ctex[39m[0m
+[   6% ] [90m[1msavepack[22m | Storing File: res://assets/environments/firelit_arena.webp.import[39m[0m
+[   8% ] [90m[1msavepack[22m | Storing File: res://assets/environments/manifest.json[39m[0m
+[   9% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/pale_throne.png-98a87ffca6a7552830ba3445454a58f8.ctex[39m[0m
+[   9% ] [90m[1msavepack[22m | Storing File: res://assets/environments/pale_throne.png.import[39m[0m
+[  11% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/pale_throne_arena.webp-af72ce6c6d64469a82f4e3cdd3a09a07.ctex[39m[0m
+[  11% ] [90m[1msavepack[22m | Storing File: res://assets/environments/pale_throne_arena.webp.import[39m[0m
+[  12% ] [90m[1msavepack[22m | Storing File: res://assets/environments/region_arenas.json[39m[0m
+[  14% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/review-contact.png-fe2eedfddcc3485dcb11e56ca6640691.ctex[39m[0m
+[  14% ] [90m[1msavepack[22m | Storing File: res://assets/environments/review-contact.png.import[39m[0m
+[  15% ] [90m[1msavepack[22m | Storing File: res://assets/fonts/AshenKorean-PROVENANCE.json[39m[0m
+[  17% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/AshenKorean-Regular.otf-d4028c5dab9ecec0c3c30c8197864604.fontdata[39m[0m
+[  17% ] [90m[1msavepack[22m | Storing File: res://assets/fonts/AshenKorean-Regular.otf.import[39m[0m
+[  18% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/PixelifySans.ttf-4613dc276f227b5d31d032a4586e3281.fontdata[39m[0m
+[  18% ] [90m[1msavepack[22m | Storing File: res://assets/fonts/PixelifySans.ttf.import[39m[0m
+[  20% ] [90m[1msavepack[22m | Storing File: res://assets/generated/actors_master.json[39m[0m
+[  21% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/actors_master.webp-f787b07eb065a20b47b0e7ecb0bea3b1.ctex[39m[0m
+[  21% ] [90m[1msavepack[22m | Storing File: res://assets/generated/actors_master.webp.import[39m[0m
+[  23% ] [90m[1msavepack[22m | Storing File: res://assets/generated/actor_alpha.gdshader[39m[0m
+[  24% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ivo.png-d5d12aab78c2119389414fd9af6f3907.ctex[39m[0m
+[  24% ] [90m[1msavepack[22m | Storing File: res://assets/heroes/ivo.png.import[39m[0m
+[  26% ] [90m[1msavepack[22m | Storing File: res://assets/heroes/manifest.json[39m[0m
+[  27% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/mara.png-b03af30f9724cfa5bae8c6b0f5e0dce3.ctex[39m[0m
+[  27% ] [90m[1msavepack[22m | Storing File: res://assets/heroes/mara.png.import[39m[0m
+[  29% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/review-contact.png-daf9589bd969fac121d5fc0a36c04df0.ctex[39m[0m
+[  29% ] [90m[1msavepack[22m | Storing File: res://assets/heroes/review-contact.png.import[39m[0m
+[  30% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/sable.png-620d29ebd372e202a6f0a25a525488d1.ctex[39m[0m
+[  30% ] [90m[1msavepack[22m | Storing File: res://assets/heroes/sable.png.import[39m[0m
+[  32% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/arcane.png-4087e9b55ec9b4186da4ea4c6a94599a.ctex[39m[0m
+[  32% ] [90m[1msavepack[22m | Storing File: res://assets/ui/arcane.png.import[39m[0m
+[  33% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/blunt.png-fb47d7d5a85a2ab2b4147248cddac6d9.ctex[39m[0m
+[  33% ] [90m[1msavepack[22m | Storing File: res://assets/ui/blunt.png.import[39m[0m
+[  34% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/guard.png-8384827c485cb84011a99beaf4c66e40.ctex[39m[0m
+[  34% ] [90m[1msavepack[22m | Storing File: res://assets/ui/guard.png.import[39m[0m
+[  35% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/panel_disabled.png-c3bdde84acb69e47950392182f821f1c.ctex[39m[0m
+[  35% ] [90m[1msavepack[22m | Storing File: res://assets/ui/panel_disabled.png.import[39m[0m
+[  37% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/panel_gold.png-4e73a3f0c39168af00893cbb7b199340.ctex[39m[0m
+[  37% ] [90m[1msavepack[22m | Storing File: res://assets/ui/panel_gold.png.import[39m[0m
+[  38% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/panel_hover.png-60bc987d5b521ec4b7e3efd19b71aac8.ctex[39m[0m
+[  38% ] [90m[1msavepack[22m | Storing File: res://assets/ui/panel_hover.png.import[39m[0m
+[  40% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/panel_normal.png-57e0ffe26fee66c3006860470755a2e8.ctex[39m[0m
+[  40% ] [90m[1msavepack[22m | Storing File: res://assets/ui/panel_normal.png.import[39m[0m
+[  41% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/pierce.png-75a1c3d6949bfc90422dde40107cbf94.ctex[39m[0m
+[  41% ] [90m[1msavepack[22m | Storing File: res://assets/ui/pierce.png.import[39m[0m
+[  43% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/slash.png-b245bdd7abe09baacb7c212e390e78aa.ctex[39m[0m
+[  43% ] [90m[1msavepack[22m | Storing File: res://assets/ui/slash.png.import[39m[0m
+[  44% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/camp.png-b0ecadd334f2dfe6e0da13331bdd2118.ctex[39m[0m
+[  44% ] [90m[1msavepack[22m | Storing File: res://assets/vignettes/camp.png.import[39m[0m
+[  46% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/event.png-ff8cadae7a517a6e8ae440dd6f9653ac.ctex[39m[0m
+[  46% ] [90m[1msavepack[22m | Storing File: res://assets/vignettes/event.png.import[39m[0m
+[  47% ] [90m[1msavepack[22m | Storing File: res://assets/vignettes/manifest.json[39m[0m
+[  49% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/relic.png-7818f2a1c3d53f806f04383d6687b77a.ctex[39m[0m
+[  49% ] [90m[1msavepack[22m | Storing File: res://assets/vignettes/relic.png.import[39m[0m
+[  50% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/review-contact.png-e7d2f73c94b7e17e278e7c1b56083ba7.ctex[39m[0m
+[  50% ] [90m[1msavepack[22m | Storing File: res://assets/vignettes/review-contact.png.import[39m[0m
+[  52% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/reward.png-b49a8b9691d39792583ad080e09d8fff.ctex[39m[0m
+[  52% ] [90m[1msavepack[22m | Storing File: res://assets/vignettes/reward.png.import[39m[0m
+[  53% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/cinder_forest.png-97e04d31eacdb2266ecb990937790ace.ctex[39m[0m
+[  53% ] [90m[1msavepack[22m | Storing File: res://assets/cinder_forest.png.import[39m[0m
+[  55% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hero_0.png-0f7c5def1ccd568532b4fb8620dbd3bd.ctex[39m[0m
+[  55% ] [90m[1msavepack[22m | Storing File: res://assets/hero_0.png.import[39m[0m
+[  56% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hero_1.png-6782a48df2c6a5ca3b1c0de4caf5fe05.ctex[39m[0m
+[  56% ] [90m[1msavepack[22m | Storing File: res://assets/hero_1.png.import[39m[0m
+[  58% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hero_2.png-07954612cc6a51ddac80a43f685fdc47.ctex[39m[0m
+[  58% ] [90m[1msavepack[22m | Storing File: res://assets/hero_2.png.import[39m[0m
+[  59% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_1_0.png-159d65834bbf5ba48b696b229e61f777.ctex[39m[0m
+[  59% ] [90m[1msavepack[22m | Storing File: res://assets/titan_1_0.png.import[39m[0m
+[  61% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_1_1.png-35080692e20658beb21c96a7878ca6fd.ctex[39m[0m
+[  61% ] [90m[1msavepack[22m | Storing File: res://assets/titan_1_1.png.import[39m[0m
+[  62% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_1_2.png-b9a8747e1e5465b5006f7cff7e4aad09.ctex[39m[0m
+[  62% ] [90m[1msavepack[22m | Storing File: res://assets/titan_1_2.png.import[39m[0m
+[  64% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_2_0.png-0eab39795cbca99b6cca0d85cd380a98.ctex[39m[0m
+[  64% ] [90m[1msavepack[22m | Storing File: res://assets/titan_2_0.png.import[39m[0m
+[  65% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_2_1.png-148e9e4089cc8d4ec43acc8de15851b2.ctex[39m[0m
+[  65% ] [90m[1msavepack[22m | Storing File: res://assets/titan_2_1.png.import[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_2_2.png-c7f7ff1692392df52fd6f9013c3fc2b9.ctex[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://assets/titan_2_2.png.import[39m[0m
+[  67% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_3_0.png-bc2d7d0c6348334a6b4d6c669d77e3a2.ctex[39m[0m
+[  67% ] [90m[1msavepack[22m | Storing File: res://assets/titan_3_0.png.import[39m[0m
+[  69% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_3_1.png-ef2885499441887be124368df9c5d227.ctex[39m[0m
+[  69% ] [90m[1msavepack[22m | Storing File: res://assets/titan_3_1.png.import[39m[0m
+[  70% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/titan_3_2.png-9cfe80af0fa08759bfc488aa809b3f1f.ctex[39m[0m
+[  70% ] [90m[1msavepack[22m | Storing File: res://assets/titan_3_2.png.import[39m[0m
+[  72% ] [90m[1msavepack[22m | Storing File: res://core/historical_effect_resolver.gdc[39m[0m
+[  73% ] [90m[1msavepack[22m | Storing File: res://core/provisional_combat.gdc[39m[0m
+[  75% ] [90m[1msavepack[22m | Storing File: res://core/provisional_ui.gdc[39m[0m
+[  76% ] [90m[1msavepack[22m | Storing File: res://core/reference_contract.gdc[39m[0m
+[  78% ] [90m[1msavepack[22m | Storing File: res://legacy/legacy_content.gdc[39m[0m
+[  79% ] [90m[1msavepack[22m | Storing File: res://rulesets/ashen_provisional_v1/profile.json[39m[0m
+[  81% ] [90m[1msavepack[22m | Storing File: res://rulesets/severed_historical_effects_v1/manifest.json[39m[0m
+[  82% ] [90m[1msavepack[22m | Storing File: res://rulesets/severed_v0_2_102/evidence.json[39m[0m
+[  84% ] [90m[1msavepack[22m | Storing File: res://assets/fonts/OFL.txt[39m[0m
+[  85% ] [90m[1msavepack[22m | Storing File: res://generated_actor_art.gdc[39m[0m
+[  87% ] [90m[1msavepack[22m | Storing File: res://.godot/exported/133200997/export-3070c538c03ee49b7677ff960a3f5195-main.scn[39m[0m
+[  88% ] [90m[1msavepack[22m | Storing File: res://generated_monster.gdc[39m[0m
+[  90% ] [90m[1msavepack[22m | Storing File: res://localization.gdc[39m[0m
+[  91% ] [90m[1msavepack[22m | Storing File: res://main.gdc[39m[0m
+[  93% ] [90m[1msavepack[22m | Storing File: res://character_studio.gdc[39m[0m
+[  94% ] [90m[1msavepack[22m | Storing File: res://model.gdc[39m[0m
+[  96% ] [90m[1msavepack[22m | Storing File: res://animated_hero.gdc[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://.godot/exported/133200997/export-22c992b73c62cdb2b91227f00f10e17a-character_studio.scn[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://core/historical_effect_resolver.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://core/provisional_combat.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://core/provisional_ui.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://core/reference_contract.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://legacy/legacy_content.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://generated_actor_art.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://main.tscn.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://generated_monster.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://localization.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://main.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://character_studio.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://model.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://animated_hero.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://character_studio.tscn.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://.godot/global_script_class_cache.cfg[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://.godot/uid_cache.bin[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://project.binary[39m[0m
+[92m[ DONE ][39m [1msavepack[22m
+[0m

@@ -142,6 +142,9 @@ func run_tests() -> void:
 	scene.model.boss.downed=true
 	Combat._update_heights(scene.model)
 	scene.select_part(0)
+	check(button_containing("LIMB SPENT")!=null and button_containing("LIMB SPENT").disabled,"spent limb visibly disables damage farming")
+	check(not button_containing("F / SEVER").disabled,"spent limb still offers manual Sever")
+	check("body damage" in button_containing("F / SEVER").tooltip_text,"Sever explains rupture reward and EP recovery route")
 	scene.provisional_special("sever")
 	check(scene.model.parts[0].severed and scene.model.boss.collapsed,"manual Sever handler permanently changes posture")
 	check(scene.model.heroes[0].ep==1 and scene.selected_hero==1,"Sever spends one EP and current action")
@@ -164,10 +167,40 @@ func run_tests() -> void:
 		scene.refresh(false)
 		await process_frame
 		for child in scene.ui.get_children():
-			if child is Label and child.autowrap_mode!=TextServer.AUTOWRAP_OFF:
-				check(child.position.y+child.size.y<=900,"help text stays in viewport / "+language)
+			if child is Label and child.position==Vector2(285,196):
+				check(child.position.y+child.size.y<=713,"help text clears close control / %s bottom=%s" % [language,str(child.position.y+child.size.y)])
 		check(button_containing("CLOSE GUIDE" if language=="en" else "안내 닫기")!=null,"localized guide close / "+language)
 	Localization.set_language("en")
+	reset_battle()
+	scene.model.boss.tier=2
+	scene.model.round_number=2
+	Combat._prepare_intent(scene.model)
+	scene.refresh(false)
+	await process_frame
+	scene.request_end_round()
+	check(button_containing("INCOMING HP -23")!=null,"targeted hero Defend shows exact combined incoming loss before committing")
+	for attack: Dictionary in scene.model.preview_intent().attacks:
+		var found:=false
+		for child in scene.ui.get_children():
+			if child is Label and scene.display_text(str(attack.source)) in child.text and " / " in child.text: found=true
+		check(found,"each converging omen identifies the actual limb source")
+	reset_battle()
+	for p: Dictionary in scene.model.parts:
+		p.shield=0
+		p.broken=true
+		p.hp=0
+	scene.model.boss.downed=true
+	Combat._update_heights(scene.model)
+	for h: Dictionary in scene.model.heroes: h.ep=0
+	scene.refresh(false)
+	await process_frame
+	check(button_containing("LIMB SPENT").disabled and button_containing("F / SEVER").disabled,"zero-EP spent state visibly disables unavailable damage and Sever")
+	check(not button_containing("SPACE / PASS").disabled and not button_containing("R / DEFEND").disabled,"zero-EP all-spent state keeps both recovery exits enabled")
+	scene.request_end_round()
+	scene.request_end_round()
+	scene.request_end_round()
+	scene.request_end_round()
+	check(scene.model.heroes[0].ep==2 and not button_containing("F / SEVER").disabled,"UI Pass route restores EP and enables Sever")
 	reset_battle()
 	scene.menu=true
 	scene.refresh(false)
